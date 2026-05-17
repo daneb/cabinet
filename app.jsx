@@ -8,6 +8,7 @@ import './slices/eval-bar/eval-bar.jsx';
 import './slices/engine/engine.jsx';
 import './slices/move-list/move-list.jsx';
 import './slices/panel/panel.jsx';
+import './slices/pgn/pgn.js';
 
 const { useState, useEffect, useCallback, useMemo, useRef } = React;
 
@@ -44,6 +45,8 @@ function App() {
   const [pendingPromotion, setPendingPromotion] = useState(null);
   const [toast, setToast] = useState(null);
   const [dirty, setDirty] = useState(false);
+  const [showImport, setShowImport] = useState(false);
+  const [importText, setImportText] = useState('');
 
   const toastTimerRef = useRef(null);
   const showToast = useCallback((msg) => {
@@ -313,6 +316,47 @@ function App() {
     showToast('New analysis');
   };
 
+  const handleImport = () => {
+    if (dirty && !confirm('Discard current line?')) return;
+    setImportText('');
+    setShowImport(true);
+  };
+
+  const doImport = () => {
+    const text = importText.trim();
+    if (!text) return;
+    const result = window.PGN.parse(text, { allowIllegal: true });
+    if (result.error && !result.tree) {
+      showToast(`Import failed: ${result.error}`);
+      return;
+    }
+    setTree(result.tree);
+    setCurrentNodeId(result.tree.rootId);
+    setActiveId(null);
+    setActiveName('');
+    setSelected(null);
+    setLegalTargets([]);
+    setDirty(false);
+    setShowImport(false);
+    const msg = result.warnings.length
+      ? `Imported with ${result.warnings.length} warning(s) — see console`
+      : 'Imported successfully';
+    showToast(msg);
+    if (result.warnings.length) console.warn('PGN import warnings:', result.warnings);
+  };
+
+  const handleExport = () => {
+    try {
+      const text = window.PGN.serialize(tree, { headers: { ...tree.headers, Result: '*' } });
+      navigator.clipboard.writeText(text).then(
+        () => showToast('PGN copied to clipboard'),
+        () => showToast('Export failed')
+      );
+    } catch (e) {
+      showToast('Export failed');
+    }
+  };
+
   return (
     <div className="app">
       <header className="topbar">
@@ -325,6 +369,8 @@ function App() {
             <div className={`engine-dot ${engineReady ? 'ready' : ''}`}></div>
             {engineReady ? 'engine on' : 'engine…'}
           </div>
+          <button className="btn btn-ghost" onClick={handleImport}>Import PGN</button>
+          <button className="btn btn-ghost" onClick={handleExport}>Export PGN</button>
           <button className="btn btn-ghost" onClick={handleNew}>New line</button>
           <button className="btn btn-ghost" onClick={() => setFlipped(f => !f)}>Flip</button>
         </div>
@@ -429,6 +475,24 @@ function App() {
           }}
           onCancel={() => setPendingPromotion(null)}
         />
+      ) : null}
+
+      {showImport ? (
+        <div className="promotion-overlay" onClick={() => setShowImport(false)}>
+          <div className="promotion-dialog" style={{ maxWidth: '560px' }} onClick={(e) => e.stopPropagation()}>
+            <h3>Import PGN</h3>
+            <textarea
+              style={{ width: '100%', height: '200px', marginTop: 8, fontFamily: 'monospace', fontSize: 13, background: 'var(--surface)', color: 'var(--ink)', border: '1px solid var(--ink-4)', borderRadius: 4, padding: 8, resize: 'vertical' }}
+              placeholder="Paste PGN here..."
+              value={importText}
+              onChange={(e) => setImportText(e.target.value)}
+            />
+            <div style={{ display: 'flex', gap: 8, marginTop: 12, justifyContent: 'flex-end' }}>
+              <button className="btn btn-ghost" onClick={() => setShowImport(false)}>Cancel</button>
+              <button className="btn btn-primary" onClick={doImport}>Import</button>
+            </div>
+          </div>
+        </div>
       ) : null}
 
       {toast ? <div className="toast">{toast}</div> : null}

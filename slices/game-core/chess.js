@@ -397,6 +397,83 @@ function suffixCheck(state, from, to, options) {
   return '+';
 }
 
+function parseSAN(state, san) {
+  let s = san.replace(/[+#!?]/g, '');
+
+  // Promotion suffix
+  let promotion = null;
+  if (s.includes('=')) {
+    promotion = s[s.length - 1].toLowerCase();
+    s = s.slice(0, -2);
+  }
+
+  // Castles
+  if (s === 'O-O' || s === 'O-O-O') {
+    const kIdx = findKing(state.board, state.turn);
+    const rank = state.turn === 'w' ? 7 : 0;
+    const to = s === 'O-O' ? rank * 8 + 6 : rank * 8 + 2;
+    return { from: kIdx, to, promotion: null };
+  }
+
+  // Destination is always the last 2 chars
+  if (s.length < 2) return null;
+  const to = fromName(s.slice(-2));
+  if (to < 0 || to >= 64) return null;
+  s = s.slice(0, -2);
+
+  // Remove capture marker
+  s = s.replace('x', '');
+
+  // Determine piece type
+  let pieceType = 'p';
+  if (s.length > 0 && s[0] >= 'A' && s[0] <= 'Z') {
+    pieceType = s[0].toLowerCase();
+    s = s.slice(1);
+  }
+
+  // Disambiguation
+  let disFile = null;
+  let disRank = null;
+  if (s.length >= 1 && s[0] >= 'a' && s[0] <= 'h') {
+    disFile = s[0];
+    if (s.length >= 2) disRank = parseInt(s[1], 10);
+  } else if (s.length >= 1 && s[0] >= '1' && s[0] <= '8') {
+    disRank = parseInt(s[0], 10);
+  }
+
+  const candidates = [];
+  for (const [from, t] of allLegalMoves(state)) {
+    if (t !== to) continue;
+    const piece = state.board[from];
+    if (piece === '.') continue;
+    if (piece.toLowerCase() !== pieceType) continue;
+    if (colorOf(piece) !== state.turn) continue;
+
+    // Disambiguation filters
+    const fc = from % 8;
+    const fr = Math.floor(from / 8);
+    if (disFile && FILES[fc] !== disFile) continue;
+    if (disRank && (8 - fr) !== disRank) continue;
+
+    // Promotion check
+    if (promotion) {
+      if (piece.toLowerCase() !== 'p') continue;
+      const tr = Math.floor(to / 8);
+      if (tr !== 0 && tr !== 7) continue;
+    } else {
+      // Without explicit promotion, reject pawn moves to the last rank
+      if (piece.toLowerCase() === 'p') {
+        const tr = Math.floor(to / 8);
+        if (tr === 0 || tr === 7) continue;
+      }
+    }
+
+    candidates.push({ from, to, promotion });
+  }
+
+  return candidates.length === 1 ? candidates[0] : null;
+}
+
 function fromFEN(fen) {
   const [placement, turn, castling, epStr, halfmove, fullmove] = fen.split(' ');
   let board = '';
@@ -420,7 +497,7 @@ const Chess = {
   isWhite, isBlack, colorOf,
   rcOf, nameOf, fromName,
   applyMove, isLegalMove, legalTargetsFrom, allLegalMoves,
-  toSAN, inCheck, findKing, stateToFEN, fromFEN,
+  toSAN, parseSAN, inCheck, findKing, stateToFEN, fromFEN,
 };
 if (typeof window !== 'undefined') window.Chess = Chess;
 export default Chess;
