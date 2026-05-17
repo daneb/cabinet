@@ -166,6 +166,14 @@ function parse(text, opts = {}) {
 
       case 'COMMENT':
         tree = globalThis.MoveTree.setComment(tree, current, token.value);
+        // Extract chapter/section tags from comment
+        const tagMatch = token.value.match(/^(Chapter|Section):\s*(.+)/i);
+        if (tagMatch) {
+          const tagKey = tagMatch[1].toLowerCase();
+          const node = tree.nodes[current];
+          const existing = node.tags || {};
+          tree = { ...tree, nodes: { ...tree.nodes, [current]: { ...node, tags: { ...existing, [tagKey]: tagMatch[2].trim() } } } };
+        }
         break;
 
       case 'LPAREN':

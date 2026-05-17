@@ -7,6 +7,7 @@ import Chess from '../../slices/game-core/chess.js';
 globalThis.Chess = Chess;
 
 const { createTree, playMove, promoteToMainline, deleteSubtree, markStatus,
+        visitNode, recordDrillResult, applyDecay,
         walkMainline, pathToRoot, fenKey, buildFenIndex, nodeCount, mainlineDepth,
         migrateV1toV2 } = MoveTree;
 
@@ -360,16 +361,83 @@ describe('migrateV1toV2', () => {
 });
 
 describe('markStatus', () => {
-  it('updates status, lastSeenAt, and reviewCount', () => {
+  it('sets status only', () => {
     let tree = createTree(Chess.START_STATE);
     tree = markStatus(tree, tree.rootId, 'reviewing');
+    assert.equal(tree.nodes[tree.rootId].status, 'reviewing');
+    assert.equal(tree.nodes[tree.rootId].reviewCount, 0);
+    tree = markStatus(tree, tree.rootId, 'known');
+    assert.equal(tree.nodes[tree.rootId].status, 'known');
+  });
+});
+
+describe('visitNode', () => {
+  it('transitions unseen → reviewing and sets lastSeenAt', () => {
+    let tree = createTree(Chess.START_STATE);
+    tree = visitNode(tree, tree.rootId);
     const node = tree.nodes[tree.rootId];
     assert.equal(node.status, 'reviewing');
     assert.ok(node.lastSeenAt > 0);
-    assert.equal(node.reviewCount, 1);
+  });
 
+  it('bumps lastSeenAt but keeps known status', () => {
+    let tree = createTree(Chess.START_STATE);
     tree = markStatus(tree, tree.rootId, 'known');
-    assert.equal(tree.nodes[tree.rootId].reviewCount, 2);
+    tree = visitNode(tree, tree.rootId);
+    const node = tree.nodes[tree.rootId];
+    assert.equal(node.status, 'known');
+    assert.ok(node.lastSeenAt > 0);
+  });
+});
+
+describe('recordDrillResult', () => {
+  it('records success: reviewCount incremented, status → reviewing', () => {
+    let tree = createTree(Chess.START_STATE);
+    tree = recordDrillResult(tree, tree.rootId, true);
+    const node = tree.nodes[tree.rootId];
+    assert.equal(node.status, 'reviewing');
+    assert.equal(node.reviewCount, 1);
+    assert.ok(node.lastDrilledAt > 0);
+  });
+
+  it('promotes to known after 3 successes', () => {
+    let tree = createTree(Chess.START_STATE);
+    tree = recordDrillResult(tree, tree.rootId, true);
+    assert.equal(tree.nodes[tree.rootId].status, 'reviewing');
+    tree = recordDrillResult(tree, tree.rootId, true);
+    // 2 successes while reviewing → known
+    assert.equal(tree.nodes[tree.rootId].status, 'known');
+    tree = recordDrillResult(tree, tree.rootId, true);
+    assert.equal(tree.nodes[tree.rootId].reviewCount, 3);
+  });
+
+  it('drops to reviewing on failure', () => {
+    let tree = createTree(Chess.START_STATE);
+    tree = markStatus(tree, tree.rootId, 'known');
+    tree = recordDrillResult(tree, tree.rootId, false);
+    assert.equal(tree.nodes[tree.rootId].status, 'reviewing');
+  });
+});
+
+describe('applyDecay', () => {
+  it('decays known nodes not drilled in >30 days', () => {
+    let tree = createTree(Chess.START_STATE);
+    tree = markStatus(tree, tree.rootId, 'known');
+    // Set lastDrilledAt to 31 days ago
+    const oldNodes = { ...tree.nodes };
+    oldNodes[tree.rootId] = { ...oldNodes[tree.rootId], lastDrilledAt: Date.now() - 31 * 24 * 60 * 60 * 1000 };
+    tree = { ...tree, nodes: oldNodes };
+    tree = applyDecay(tree);
+    assert.equal(tree.nodes[tree.rootId].status, 'reviewing');
+  });
+
+  it('leaves recently drilled known nodes alone', () => {
+    let tree = createTree(Chess.START_STATE);
+    tree = markStatus(tree, tree.rootId, 'known');
+    const oldNodes = { ...tree.nodes };
+    oldNodes[tree.rootId] = { ...oldNodes[tree.rootId], lastDrilledAt: Date.now() };
+    tree = { ...tree, nodes: oldNodes };
+    tree = applyDecay(tree);
     assert.equal(tree.nodes[tree.rootId].status, 'known');
   });
 });

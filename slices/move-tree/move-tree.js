@@ -32,7 +32,9 @@ function createTree(startState) {
     nag: null,
     status: null,
     lastSeenAt: null,
+    lastDrilledAt: null,
     reviewCount: 0,
+    tags: null,
   };
   return {
     schemaVersion: 2,
@@ -77,7 +79,9 @@ function playMove(tree, fromNodeId, from, to, opts) {
     nag: null,
     status: null,
     lastSeenAt: null,
+    lastDrilledAt: null,
     reviewCount: 0,
+    tags: null,
   };
 
   const key = fenKey(result.state);
@@ -176,14 +180,94 @@ function markStatus(tree, nodeId, status) {
     ...tree,
     nodes: {
       ...tree.nodes,
-      [nodeId]: {
-        ...node,
-        status,
-        lastSeenAt: Date.now(),
-        reviewCount: node.reviewCount + 1,
-      },
+      [nodeId]: { ...node, status },
     },
   };
+}
+
+// Mark a node as visited (passive navigation). Unseen → reviewing.
+function visitNode(tree, nodeId) {
+  const node = tree.nodes[nodeId];
+  if (!node) return tree;
+  if (node.status && node.status !== 'unseen') {
+    // Already reviewing or known — just bump lastSeenAt
+    return { ...tree, nodes: { ...tree.nodes, [nodeId]: { ...node, lastSeenAt: Date.now() } } };
+  }
+  return {
+    ...tree,
+    nodes: { ...tree.nodes, [nodeId]: { ...node, status: 'reviewing', lastSeenAt: Date.now() } },
+  };
+}
+
+// Record a drill result. Handles status transitions per ADR-0004.
+function recordDrillResult(tree, nodeId, success) {
+  const node = tree.nodes[nodeId];
+  if (!node) return tree;
+  const now = Date.now();
+  if (success) {
+    const count = (node.reviewCount || 0) + 1;
+    let status = 'reviewing';
+    if (count >= 3) status = 'known';
+    else if (count >= 2 && node.status === 'reviewing') status = 'known';
+    return {
+      ...tree,
+      nodes: {
+        ...tree.nodes,
+        [nodeId]: { ...node, status, reviewCount: count, lastDrilledAt: now },
+      },
+    };
+  } else {
+    // Failure: drops to reviewing
+    return {
+      ...tree,
+      nodes: {
+        ...tree.nodes,
+        [nodeId]: { ...node, status: 'reviewing', lastDrilledAt: now },
+      },
+    };
+  }
+}
+
+// Decay: known nodes not drilled in >30 days drop to reviewing.
+function applyDecay(tree) {
+  const now = Date.now();
+  const THIRTY_DAYS = 30 * 24 * 60 * 60 * 1000;
+  let changed = false;
+  const newNodes = { ...tree.nodes };
+  for (const id of Object.keys(newNodes)) {
+    const node = newNodes[id];
+    if (node.status === 'known' && node.lastDrilledAt && (now - node.lastDrilledAt) > THIRTY_DAYS) {
+      newNodes[id] = { ...node, status: 'reviewing' };
+      changed = true;
+    }
+  }
+  return changed ? { ...tree, nodes: newNodes } : tree;
+}
+
+// Chapter / section stats for tagged nodes.
+function chapterStats(tree) {
+  const chapters = {};
+  for (const id of Object.keys(tree.nodes)) {
+    const node = tree.nodes[id];
+    if (!node.tags || !node.tags.chapter) continue;
+    const name = node.tags.chapter;
+    if (!chapters[name]) chapters[name] = { nodeId: id, name, total: 0, known: 0, reviewing: 0, unseen: 0 };
+    const ch = chapters[name];
+    // Count this node + descendants that belong to this chapter
+    function count(nid) {
+      const n = tree.nodes[nid];
+      if (!n) return;
+      // If node has a different chapter tag, stop (sub-chapter boundary)
+      if (n.tags && n.tags.chapter && n.tags.chapter !== name) return;
+      ch.total++;
+      if (n.status === 'known') ch.known++;
+      else if (n.status === 'reviewing') ch.reviewing++;
+      else ch.unseen++;
+      for (const cid of n.childIds) count(cid);
+    }
+    count(id);
+  }
+  return Object.values(chapters);
 }
 
 // ---- Traversal helpers ----
@@ -310,6 +394,7 @@ function validateMigration(oldSaves, newSaves) {
 const MoveTree = {
   createTree, playMove, promoteToMainline, deleteSubtree,
   setComment, setNag, markStatus,
+  visitNode, recordDrillResult, applyDecay, chapterStats,
   walkMainline, pathToRoot,
   fenKey, buildFenIndex, nodeCount, mainlineDepth,
   migrateV1toV2, validateMigration, uuid,

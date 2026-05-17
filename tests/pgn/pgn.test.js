@@ -307,3 +307,40 @@ describe('PGN serialize', () => {
     assert.ok(out.includes('{best}'));
   });
 });
+
+describe('PGN chapter tags', () => {
+  it('extracts Chapter tag from comment', () => {
+    const pgn = `[Result "*"]
+{Chapter: The King's English} 1. c4 *`;
+
+    const { tree, warnings } = parse(pgn);
+    assert.equal(warnings.length, 0);
+    const root = tree.nodes[tree.rootId];
+    assert.ok(root.tags);
+    assert.equal(root.tags.chapter, "The King's English");
+  });
+
+  it('extracts Section tag from comment', () => {
+    const pgn = `[Result "*"]
+{Section: Botvinnik System} 1. c4 e5 2. Nc3 *`;
+
+    const { tree, warnings } = parse(pgn);
+    assert.equal(warnings.length, 0);
+    const root = tree.nodes[tree.rootId];
+    assert.ok(root.tags);
+    assert.equal(root.tags.section, 'Botvinnik System');
+  });
+
+  it('tags the correct node when comment follows a move', () => {
+    const pgn = `[Result "*"]
+1. e4 {Chapter: Open Games} e5 2. Nf3 *`;
+
+    const { tree, warnings } = parse(pgn);
+    assert.equal(warnings.length, 0);
+    const mainline = MoveTree.walkMainline(tree);
+    assert.ok(mainline[1].tags);
+    assert.equal(mainline[1].tags.chapter, 'Open Games');
+    // Root should not have the tag
+    assert.equal(tree.nodes[tree.rootId].tags, null);
+  });
+});

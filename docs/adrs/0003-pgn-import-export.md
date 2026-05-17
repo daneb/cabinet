@@ -1,6 +1,6 @@
 # ADR-0003: PGN import / export
 
-**Status**: Proposed
+**Status**: Accepted
 **Date**: 2026-05-17
 **Depends on**: ADR-0001 (move tree)
 
@@ -196,3 +196,20 @@ Each corpus file is a `.pgn` paired with a `.expected.json` snapshot of the resu
 - FEN-only import (paste a position, start analyzing). Useful but a different feature.
 - ChessBase `.cbh` files, polyglot opening books, EPD test suites. PGN is the goal.
 - Export to image / animated GIF / annotated diagram. Different problem.
+
+## Implementation notes (2026-05-17)
+
+**`parseSAN`** (`slices/game-core/chess.js`): Implemented as the inverse of `toSAN` by enumerating `allLegalMoves` and filtering by piece type, destination, and disambiguation. Cross-checks against legality rather than parsing the SAN string in isolation — this guarantees consistency between reader and writer.
+
+**Tokenizer** (`slices/pgn/pgn.js`): Character-by-char scanner rather than regex-based. Skips move numbers, handles inline NAG shorthand (`!?` etc.), and treats braces as non-nesting comment delimiters. Multi-game files emit a warning; only the first game is parsed (v1 limitation).
+
+**Variation stack**: LPAREN rewinds to parent of current node (variation is an alternative to the move just played). RPAREN restores from stack. Handles arbitrarily nested variations.
+
+**Serializer**: Recursive walk from root. Variations (non-mainline children) emitted in parentheses inline after the move they branch from. NAGs emitted as `$NNN`, comments as `{text}`. Headers round-tripped from `tree.headers`.
+
+**Chapter tag import**: Comments matching `Chapter: ...` or `Section: ...` populate `node.tags` during parse. This enables the chapter listing panel (ADR-0004).
+
+**Open questions resolved**:
+1. Root-node comments: stored on `tree.nodes[rootId].comment`, serialized before first move.
+2. Unknown headers: stored on `tree.headers` for round-trip purity.
+3. Merge into existing tree: deferred — v1 replaces, merge-mode is a follow-up.

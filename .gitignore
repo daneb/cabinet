@@ -42,3 +42,7 @@ yarn.lock
 
 # Ignore any temporary files created by editors
 *~
+
+# Disk-backed persistence store.
+# Remove this line to commit saves.json as a backup.
+data/saves.json

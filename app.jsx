@@ -9,19 +9,20 @@ import './slices/engine/engine.jsx';
 import './slices/move-list/move-list.jsx';
 import './slices/panel/panel.jsx';
 import './slices/pgn/pgn.js';
+import './slices/drill/drill.jsx';
 
 const { useState, useEffect, useCallback, useMemo, useRef } = React;
 
 const STORAGE_KEY = 'chess_analysis_saves_v2';
 const SESSION_KEY = 'chess_analysis_session_v2';
 const V1_SAVES_KEY = 'chess_analysis_saves_v1';
-const V1_SESSION_KEY = 'chess_analysis_session_v1';
+const FILE_STORE_URL = '/api/saves';
 const MATERIAL_VALUES = { p: 1, n: 3, b: 3, r: 5, q: 9 };
 
-function loadSaves() {
+function loadSavesLocal() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; }
 }
-function persistSaves(saves) {
+function persistSavesLocal(saves) {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(saves)); } catch {}
 }
 function loadSession() {
@@ -29,6 +30,23 @@ function loadSession() {
 }
 function persistSession(data) {
   try { localStorage.setItem(SESSION_KEY, JSON.stringify(data)); } catch {}
+}
+
+async function loadSavesFromDisk() {
+  try {
+    const res = await fetch(FILE_STORE_URL);
+    if (res.ok) return await res.json();
+  } catch {}
+  return null;
+}
+async function persistSavesToDisk(saves) {
+  try {
+    await fetch(FILE_STORE_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(saves),
+    });
+  } catch {}
 }
 
 function App() {
@@ -39,7 +57,7 @@ function App() {
   const [selected, setSelected] = useState(null);
   const [legalTargets, setLegalTargets] = useState([]);
   const [flipped, setFlipped] = useState(false);
-  const [saves, setSaves] = useState(loadSaves());
+  const [saves, setSaves] = useState([]);
   const [activeId, setActiveId] = useState(null);
   const [activeName, setActiveName] = useState('');
   const [pendingPromotion, setPendingPromotion] = useState(null);
@@ -47,6 +65,7 @@ function App() {
   const [dirty, setDirty] = useState(false);
   const [showImport, setShowImport] = useState(false);
   const [importText, setImportText] = useState('');
+  const [drillMenu, setDrillMenu] = useState(null); // { nodeId, x, y }
 
   const toastTimerRef = useRef(null);
   const showToast = useCallback((msg) => {
@@ -55,17 +74,58 @@ function App() {
     toastTimerRef.current = setTimeout(() => setToast(null), 1800);
   }, []);
 
+  // ---- Drill mode ----
+
+  const {
+    drill, startDrill, handleMove: handleDrillMove,
+    showAnswer, endDrill, closeDrill, drillMisses,
+  } = window.useDrill(tree, setTree, currentNodeId, setCurrentNodeId);
+
+  const handleDrillContext = useCallback((nodeId, x, y) => {
+    setDrillMenu({ nodeId, x, y });
+  }, []);
+
+  const closeDrillMenu = useCallback(() => setDrillMenu(null), []);
+
+  // ---- Apply decay on load ----
+
+  useEffect(() => {
+    setTree(t => window.MoveTree.applyDecay(t));
+  }, []); // once on mount
+
+  // ---- Load saves (disk first, localStorage fallback) ----
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const disk = await loadSavesFromDisk();
+      if (cancelled) return;
+      if (disk && disk.length) {
+        setSaves(disk);
+      } else {
+        const local = loadSavesLocal();
+        if (local.length) {
+          setSaves(local);
+          // Migrate existing localStorage data to disk
+          persistSavesToDisk(local);
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
   // ---- v1 → v2 migration ----
 
   useEffect(() => {
     const v1Saves = (() => { try { return JSON.parse(localStorage.getItem(V1_SAVES_KEY) || '[]'); } catch { return []; } })();
     if (!v1Saves.length) return;
-    const existing = loadSaves();
+    const existing = loadSavesLocal();
     if (existing.length) return; // v2 saves already exist, skip migration
 
     const migrated = window.MoveTree.migrateV1toV2(v1Saves);
     if (migrated.length) {
-      persistSaves(migrated);
+      persistSavesLocal(migrated);
+      persistSavesToDisk(migrated);
       setSaves(migrated);
       console.info('[migration] v1 → v2:', migrated.length, 'lines migrated');
     }
@@ -126,6 +186,12 @@ function App() {
   // ---- Commit a move ----
 
   const commitMove = useCallback((from, to, promotion = null) => {
+    if (drill.active) {
+      handleDrillMove(from, to, promotion);
+      setSelected(null);
+      setLegalTargets([]);
+      return;
+    }
     const opts = promotion ? { promotion } : {};
     const res = window.MoveTree.playMove(tree, currentNodeId, from, to, opts);
     if (!res) return;
@@ -134,7 +200,7 @@ function App() {
     setSelected(null);
     setLegalTargets([]);
     setDirty(true);
-  }, [tree, currentNodeId]);
+  }, [tree, currentNodeId, drill.active, drill.phase, handleDrillMove]);
 
   // ---- Drag-and-drop hook ----
 
@@ -176,6 +242,7 @@ function App() {
 
   const goToNode = useCallback((nodeId) => {
     if (!nodeId || !tree.nodes[nodeId]) return;
+    setTree(t => window.MoveTree.visitNode(t, nodeId));
     setCurrentNodeId(nodeId);
     setSelected(null);
     setLegalTargets([]);
@@ -221,7 +288,11 @@ function App() {
         if (leaf) goToNode(leaf.id);
       } else if (e.key === 'f' || e.key === 'F') {
         setFlipped(f => !f);
+      } else if (e.key === '?' && drill.active) {
+        e.preventDefault();
+        showAnswer();
       } else if (e.key === 'Escape') {
+        if (drill.active) { endDrill(); return; }
         setSelected(null); setLegalTargets([]); setPendingPromotion(null);
       }
     };
@@ -229,20 +300,9 @@ function App() {
     return () => window.removeEventListener('keydown', onKey);
   }, [currentNodeId, tree, goToNode]);
 
-  // ---- Move list path ----
+  // ---- Move list display ----
 
-  const moveListPath = useMemo(() => {
-    // Show the mainline from root with current node highlighted.
-    // If current node is on a side branch, show pathToRoot + mainline continuation.
-    const toRoot = window.MoveTree.pathToRoot(tree, currentNodeId);
-    const fromCurrent = window.MoveTree.walkMainline(tree, currentNodeId);
-    // Combine: path to current, then continuation (skip current to avoid dup)
-    const combined = [...toRoot];
-    for (let i = 1; i < fromCurrent.length; i++) {
-      combined.push(fromCurrent[i]);
-    }
-    return combined;
-  }, [tree, currentNodeId]);
+  const mainlinePlyCount = window.MoveTree.mainlineDepth(tree);
 
   const turnLabel = currentState.turn === 'w' ? 'White to move' : 'Black to move';
   const mateOrStale = useMemo(() => {
@@ -273,7 +333,8 @@ function App() {
     }
     next.sort((a, b) => b.updatedAt - a.updatedAt);
     setSaves(next);
-    persistSaves(next);
+    persistSavesLocal(next);
+    persistSavesToDisk(next);
     setActiveId(payload.id);
     setActiveName(name);
     setDirty(false);
@@ -298,7 +359,8 @@ function App() {
     if (!confirm(`Delete "${s.name}"?`)) return;
     const next = saves.filter(x => x.id !== id);
     setSaves(next);
-    persistSaves(next);
+    persistSavesLocal(next);
+    persistSavesToDisk(next);
     if (activeId === id) { setActiveId(null); setActiveName(''); }
     showToast(`Deleted "${s.name}"`);
   };
@@ -371,6 +433,13 @@ function App() {
           </div>
           <button className="btn btn-ghost" onClick={handleImport}>Import PGN</button>
           <button className="btn btn-ghost" onClick={handleExport}>Export PGN</button>
+          {drill.active ? (
+            <button className="btn btn-ghost" onClick={endDrill}>End drill</button>
+          ) : (
+            <button className="btn btn-primary" onClick={() => startDrill(currentNodeId, 'w', 'any')}>
+              Start Drill
+            </button>
+          )}
           <button className="btn btn-ghost" onClick={handleNew}>New line</button>
           <button className="btn btn-ghost" onClick={() => setFlipped(f => !f)}>Flip</button>
         </div>
@@ -413,40 +482,63 @@ function App() {
               onDragStart={handleDragStart}
               onDragEnd={handleDragEnd}
               onDrop={handleDrop}
-              arrows={arrows}
+              arrows={drill.active ? [] : arrows}
             />
           </div>
 
           <p className="footnote">
-            Click or drag a piece. ←/→ to step, ↑/↓ for variations, F to flip.
+            {drill.active
+              ? 'Drill mode — play from memory. Press ? for hint.'
+              : 'Click or drag a piece. ←/→ to step, ↑/↓ for variations, F to flip.'}
           </p>
         </div>
 
         <aside className="panel">
           <div className="panel-section moves-section">
-            <div className="section-label">
-              <span>Move Record</span>
-              <span className="count">{moveListPath.length - 1} {moveListPath.length - 1 === 1 ? 'ply' : 'plies'}</span>
-            </div>
-            <div className="moves-scroll">
-              <window.MoveList
-                path={moveListPath}
-                currentIndex={currentNodeId}
-                onSelect={(nodeId) => goToNode(nodeId)}
-              />
-            </div>
-            <window.NavControls
-              atStart={atStart}
-              atEnd={atEnd}
-              onStart={() => goToNode(tree.rootId)}
-              onBack={() => goToNode(currentNode.parentId)}
-              onForward={() => goToNode(currentNode.childIds[0])}
-              onEnd={() => {
-                const ml = window.MoveTree.walkMainline(tree, currentNodeId);
-                goToNode(ml[ml.length - 1].id);
-              }}
-              onFlip={() => setFlipped(f => !f)}
-            />
+            {drill.active ? (
+              <>
+                <window.DrillStatusBar
+                  phase={drill.phase}
+                  successCount={drill.successCount}
+                  totalNodes={drill.totalNodes}
+                  misses={drill.misses}
+                  side={drill.side}
+                  strictness={drill.strictness}
+                  onEnd={endDrill}
+                />
+                <window.DrillBanner
+                  miss={drill.lastMiss}
+                  onShowAnswer={showAnswer}
+                />
+              </>
+            ) : (
+              <>
+                <div className="section-label">
+                  <span>Move Record</span>
+                  <span className="count">{mainlinePlyCount} {mainlinePlyCount === 1 ? 'ply' : 'plies'}</span>
+                </div>
+                <div className="moves-scroll">
+                  <window.MoveList
+                    tree={tree}
+                    currentNodeId={currentNodeId}
+                    onSelect={(nodeId) => goToNode(nodeId)}
+                    onContextMenu={handleDrillContext}
+                  />
+                </div>
+                <window.NavControls
+                  atStart={atStart}
+                  atEnd={atEnd}
+                  onStart={() => goToNode(tree.rootId)}
+                  onBack={() => goToNode(currentNode.parentId)}
+                  onForward={() => goToNode(currentNode.childIds[0])}
+                  onEnd={() => {
+                    const ml = window.MoveTree.walkMainline(tree, currentNodeId);
+                    goToNode(ml[ml.length - 1].id);
+                  }}
+                  onFlip={() => setFlipped(f => !f)}
+                />
+              </>
+            )}
           </div>
 
           <div className="panel-section">
@@ -463,6 +555,8 @@ function App() {
               currentName={activeName}
             />
           </div>
+
+          <ChapterPanel tree={tree} onSelectChapter={(nodeId) => goToNode(nodeId)} onDrillChapter={(nodeId) => startDrill(nodeId, 'w', 'any')} />
         </aside>
       </div>
 
@@ -495,6 +589,55 @@ function App() {
         </div>
       ) : null}
 
+      {drill.phase === 'COMPLETE' ? (
+        <window.DrillSummary
+          successCount={drill.successCount}
+          totalNodes={drill.totalNodes}
+          misses={drill.misses}
+          onDrillMisses={drillMisses}
+          onClose={closeDrill}
+        />
+      ) : null}
+
+      {drillMenu ? (
+        <div
+          className="promotion-overlay"
+          style={{ background: 'transparent' }}
+          onClick={closeDrillMenu}
+          onContextMenu={(e) => { e.preventDefault(); closeDrillMenu(); }}
+        >
+          <div
+            style={{
+              position: 'fixed',
+              left: drillMenu.x,
+              top: drillMenu.y,
+              background: 'var(--surface)',
+              border: '1px solid var(--ink-4)',
+              borderRadius: 4,
+              padding: '4px 0',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+              zIndex: 1000,
+              minWidth: 180,
+            }}
+          >
+            <button
+              className="btn btn-ghost"
+              style={{ display: 'block', width: '100%', textAlign: 'left', padding: '6px 12px', fontSize: 13 }}
+              onClick={() => { startDrill(drillMenu.nodeId, 'w', 'any'); closeDrillMenu(); }}
+            >
+              Drill from here (any book)
+            </button>
+            <button
+              className="btn btn-ghost"
+              style={{ display: 'block', width: '100%', textAlign: 'left', padding: '6px 12px', fontSize: 13 }}
+              onClick={() => { startDrill(drillMenu.nodeId, 'w', 'mainline'); closeDrillMenu(); }}
+            >
+              Drill from here (mainline only)
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       {toast ? <div className="toast">{toast}</div> : null}
     </div>
   );
@@ -518,6 +661,50 @@ function PromotionDialog({ white, onChoose, onCancel }) {
             </button>
           ))}
         </div>
+      </div>
+    </div>
+  );
+}
+
+function ChapterPanel({ tree, onSelectChapter, onDrillChapter }) {
+  const chapters = React.useMemo(() => {
+    return window.MoveTree.chapterStats(tree);
+  }, [tree]);
+
+  if (chapters.length === 0) return null;
+
+  return (
+    <div className="panel-section">
+      <div className="section-label">
+        <span>Chapters</span>
+        <span className="count">{chapters.length}</span>
+      </div>
+      <div className="saves-list">
+        {chapters.map(ch => (
+          <div
+            key={ch.nodeId}
+            className="save-item"
+            onClick={() => onSelectChapter(ch.nodeId)}
+          >
+            <div style={{ flex: 1 }}>
+              <div className="save-name">{ch.name}</div>
+              <div className="save-meta">
+                <span>{ch.total} nodes</span>
+                <span>·</span>
+                {ch.known > 0 ? <span style={{ color: '#3a8' }}>✓{ch.known} </span> : null}
+                {ch.reviewing > 0 ? <span style={{ color: '#d4a017' }}>●{ch.reviewing} </span> : null}
+                {ch.unseen > 0 ? <span style={{ color: 'var(--ink-3)' }}>{ch.unseen} unseen</span> : null}
+              </div>
+            </div>
+            <button
+              className="btn btn-ghost"
+              style={{ fontSize: 11, padding: '2px 8px', flexShrink: 0 }}
+              onClick={(e) => { e.stopPropagation(); onDrillChapter(ch.nodeId); }}
+            >
+              Drill
+            </button>
+          </div>
+        ))}
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 # ADR-0002: Performance pass
 
-**Status**: Proposed
+**Status**: Accepted
 **Date**: 2026-05-17
 
 ## Context

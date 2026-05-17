@@ -1,6 +1,6 @@
 # ADR-0005: Test harness for game-core
 
-**Status**: Proposed
+**Status**: Accepted
 **Date**: 2026-05-17
 **Depends on**: ADR-0002 (build step makes node-based tests possible)
 

@@ -1,6 +1,6 @@
 # ADR-0004: Study state and drill mode
 
-**Status**: Proposed
+**Status**: Accepted
 **Date**: 2026-05-17
 **Depends on**: ADR-0001 (move tree), ADR-0003 (PGN import)
 
@@ -159,3 +159,33 @@ A drill session is correct if:
 1. **Should drill mode count time-to-move as a metric?** Tempting, but adds anxiety and rewards speed over understanding. Default off. Make it a toggle if requested.
 2. **Should there be a "blunder check" mode** — drill, but with the engine running and flagging moves below the book recommendation? Probably yes, but as a separate mode, not a drill option. ADR-0006 fodder.
 3. **What happens when the tree changes underneath the study state?** If the user deletes a subtree, the study state for those nodes goes with them (per "co-fated" decision). If the user adds a new variation, it's `unseen`. If they re-order siblings, study state is preserved (it's keyed on node id, not position).
+
+## Implementation notes (2026-05-17)
+
+**Schema additions**: `lastDrilledAt` and `tags` added to node schema (in addition to the ADR-0001 fields `status`, `lastSeenAt`, `reviewCount`).
+
+**Status transitions** (`slices/move-tree/move-tree.js`):
+- `visitNode(tree, nodeId)`: unseen → reviewing on passive navigation. Bumps `lastSeenAt` for already-seen nodes.
+- `recordDrillResult(tree, nodeId, success)`: success increments `reviewCount` and sets `lastDrilledAt`; status → known after 2+ consecutive successes. Failure drops status to reviewing.
+- `applyDecay(tree)`: known nodes with `lastDrilledAt` > 30 days ago → reviewing. Runs once on app load.
+
+**Drill mode** (`slices/drill/drill.jsx`):
+- State machine: `USER_TURN` → `OPPONENT_TURN` → `SHOW_ANSWER` → `COMPLETE`
+- Opponent auto-plays mainline child after 400ms delay
+- On miss: banner shows expected vs. played, auto-reveals answer after 5s or on `?` key
+- Strictness: `mainline` (childIds[0] only) or `any` (any child accepted)
+- Completion: summary modal with percentage, per-miss breakdown, "drill misses again"
+- Progress bar with phase indicator; Esc to end, ? for hint during drill
+
+**UI surface**:
+- Status badges in tree-formatted move list: ● (reviewing), ✓ (known)
+- Start Drill / End Drill buttons in topbar; right-click any move for "Drill from here"
+- Chapter panel with per-chapter stats and quick-drill button
+- Engine arrows hidden during drill
+
+**Chapter overlay**: `chapterStats(tree)` walks tagged nodes and descendants, returning aggregate counts. Chapter panel lists chapters with ✓/●/unseen breakdown. PGN import populates tags from `{Chapter: ...}` and `{Section: ...}` comments.
+
+**Open questions resolved**:
+1. Time-to-move: not implemented in v1. Can be added as a toggle.
+2. Blunder check mode: deferred to ADR-0006.
+3. Tree changes: study state is keyed on node id, not position. Deleting a subtree removes its study state. New nodes start unseen.
