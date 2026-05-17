@@ -1,0 +1,44 @@
+node_modules/
+dist/
+.DS_Store
+
+# Tauri
+src-tauri/target/
+src-tauri/gen/
+
+# Ignore node_modules directory
+node_modules/
+
+# Ignore build directory
+build/
+
+# Ignore dist directory
+dist/
+
+# Ignore temporary files
+*.tmp
+*.log
+
+# Ignore IDE-specific files
+.idea/
+.vscode/
+
+# Ignore OS-specific files
+.DS_Store
+Thumbs.db
+
+# Ignore package-lock.json and yarn.lock if using npm or yarn respectively
+package-lock.json
+yarn.lock
+
+# Ignore any .env files
+.env
+
+# Ignore any compiled JavaScript files
+*.js.map
+
+# Ignore any lock files for other tools
+*.lock
+
+# Ignore any temporary files created by editors
+*~
