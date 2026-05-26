@@ -1,0 +1,32 @@
+name: Release DMG
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  release:
+    runs-on: macos-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build app bundle
+        run: npm run build
+
+      - name: Package DMG
+        run: npx electron-builder --mac dmg --publish always
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

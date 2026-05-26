@@ -1,11 +1,25 @@
 // Tree-formatted move list — mainline with indented variations.
 
-const { useRef, useEffect } = React;
+const { useRef, useEffect, useMemo } = React;
+
+// ---- Active path ----
+
+function computeActivePath(tree, currentNodeId) {
+  const path = new Set();
+  let id = currentNodeId;
+  while (id) {
+    path.add(id);
+    const node = tree.nodes[id];
+    if (!node || !node.parentId) break;
+    id = node.parentId;
+  }
+  return path;
+}
 
 // ---- Row builder ----
 
-function buildRows(tree, currentNodeId) {
-  const rows = []; // { depth, moveNum, cells: [{type, nodeId, san, status, isCurrent}] }
+function buildRows(tree, currentNodeId, activePath) {
+  const rows = []; // { depth, moveNum, isVariation, hasActivePath, cells: [{type, nodeId, san, status, isCurrent, isOnPath}] }
 
   function walk(nodeId, depth, moveNum) {
     const node = tree.nodes[nodeId];
@@ -19,10 +33,14 @@ function buildRows(tree, currentNodeId) {
     if (isWhite) {
       const row = { depth, moveNum, cells: [] };
       row.cells.push({ type: 'moveNum', value: moveNum });
-      row.cells.push({ type: 'san', nodeId, san: node.san, status: node.status, isCurrent: nodeId === currentNodeId });
+      row.cells.push({ type: 'san', nodeId, san: node.san, status: node.status, isCurrent: nodeId === currentNodeId, isOnPath: activePath.has(nodeId) });
       rows.push(row);
 
       if (node.childIds.length > 0) walkBlack(node.childIds[0], depth, moveNum);
+      // Alternative Black responses (variations off a White move)
+      for (let i = 1; i < node.childIds.length; i++) {
+        walkVariation(node.childIds[i], depth + 1, moveNum);
+      }
     }
   }
 
@@ -31,7 +49,7 @@ function buildRows(tree, currentNodeId) {
     if (!node || !node.san) return;
 
     const row = rows[rows.length - 1];
-    row.cells.push({ type: 'san', nodeId, san: node.san, status: node.status, isCurrent: nodeId === currentNodeId });
+    row.cells.push({ type: 'san', nodeId, san: node.san, status: node.status, isCurrent: nodeId === currentNodeId, isOnPath: activePath.has(nodeId) });
 
     if (node.childIds.length > 0) walk(node.childIds[0], depth, moveNum + 1);
 
@@ -52,7 +70,7 @@ function buildRows(tree, currentNodeId) {
       const row = { depth, moveNum, cells: [], isVariation: true };
       row.cells.push({ type: 'paren', value: '(' });
       row.cells.push({ type: 'moveNum', value: moveNum });
-      row.cells.push({ type: 'san', nodeId, san: node.san, status: node.status, isCurrent: nodeId === currentNodeId });
+      row.cells.push({ type: 'san', nodeId, san: node.san, status: node.status, isCurrent: nodeId === currentNodeId, isOnPath: activePath.has(nodeId) });
       rows.push(row);
 
       if (node.childIds.length > 0) {
@@ -65,11 +83,12 @@ function buildRows(tree, currentNodeId) {
       const row = { depth, moveNum: null, cells: [], isVariation: true };
       row.cells.push({ type: 'paren', value: '(' });
       row.cells.push({ type: 'moveNum', value: moveNum, ellipsis: true });
-      row.cells.push({ type: 'san', nodeId, san: node.san, status: node.status, isCurrent: nodeId === currentNodeId });
+      row.cells.push({ type: 'san', nodeId, san: node.san, status: node.status, isCurrent: nodeId === currentNodeId, isOnPath: activePath.has(nodeId) });
       rows.push(row);
 
       if (node.childIds.length > 0) {
-        walkVarBlack(node.childIds[0], depth, moveNum);
+        // White's response is at moveNum+1
+        walkVarBlack(node.childIds[0], depth, moveNum + 1);
       } else {
         row.cells.push({ type: 'paren', value: ')' });
       }
@@ -93,16 +112,29 @@ function buildRows(tree, currentNodeId) {
       return;
     }
 
-    const row = rows[rows.length - 1];
-    row.cells.push({ type: 'san', nodeId, san: node.san, status: node.status, isCurrent: nodeId === currentNodeId });
+    const isWhite = node.ply % 2 === 1;
 
-    if (node.childIds.length > 0) {
-      // Continue the variation
-      walk(node.childIds[0], depth, moveNum + 1);
+    if (isWhite) {
+      // White continuation in a black-start variation — needs its own row
+      const newRow = { depth, moveNum, cells: [], isVariation: true };
+      newRow.cells.push({ type: 'moveNum', value: moveNum });
+      newRow.cells.push({ type: 'san', nodeId, san: node.san, status: node.status, isCurrent: nodeId === currentNodeId, isOnPath: activePath.has(nodeId) });
+      rows.push(newRow);
+      if (node.childIds.length > 0) {
+        walkVarBlack(node.childIds[0], depth, moveNum);
+      }
+    } else {
+      // Black move — append to the current row
+      const row = rows[rows.length - 1];
+      row.cells.push({ type: 'san', nodeId, san: node.san, status: node.status, isCurrent: nodeId === currentNodeId, isOnPath: activePath.has(nodeId) });
 
-      // Sub-variations
-      for (let i = 1; i < node.childIds.length; i++) {
-        walkVariation(node.childIds[i], depth + 1, moveNum);
+      if (node.childIds.length > 0) {
+        // Continue the variation (next is White)
+        walk(node.childIds[0], depth, moveNum + 1);
+        // Sub-variations
+        for (let i = 1; i < node.childIds.length; i++) {
+          walkVariation(node.childIds[i], depth + 1, moveNum);
+        }
       }
     }
   }
@@ -113,6 +145,13 @@ function buildRows(tree, currentNodeId) {
     walk(root.childIds[0], 0, 1);
   }
 
+  // Mark variation rows that contain the active cursor path
+  for (const row of rows) {
+    if (row.isVariation) {
+      row.hasActivePath = row.cells.some(c => c.type === 'san' && c.isOnPath);
+    }
+  }
+
   return rows;
 }
 
@@ -121,7 +160,8 @@ function buildRows(tree, currentNodeId) {
 function MoveList({ tree, currentNodeId, onSelect, onContextMenu }) {
   const scrollRef = useRef(null);
 
-  const rows = tree ? buildRows(tree, currentNodeId) : [];
+  const activePath = useMemo(() => computeActivePath(tree, currentNodeId), [tree, currentNodeId]);
+  const rows = tree ? buildRows(tree, currentNodeId, activePath) : [];
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -143,7 +183,7 @@ function MoveList({ tree, currentNodeId, onSelect, onContextMenu }) {
       {rows.map((row, ri) => (
         <div
           key={ri}
-          className="move-row"
+          className={`move-row${row.isVariation && row.hasActivePath ? ' in-variation-path' : ''}`}
           style={{ paddingLeft: row.depth * 20, display: 'flex', alignItems: 'baseline', gap: 4, fontSize: 13, lineHeight: '1.7' }}
         >
           {row.cells.map((cell, ci) => {
@@ -158,10 +198,11 @@ function MoveList({ tree, currentNodeId, onSelect, onContextMenu }) {
               return <span key={ci} style={{ color: 'var(--ink-3)' }}>{cell.value}</span>;
             }
             if (cell.type === 'san') {
+              const cls = cell.isCurrent ? 'current' : cell.isOnPath ? 'on-path' : '';
               return (
                 <span
                   key={ci}
-                  className={`mv ${cell.isCurrent ? 'current' : ''}`}
+                  className={`mv${cls ? ' ' + cls : ''}`}
                   onClick={() => onSelect && onSelect(cell.nodeId)}
                   onContextMenu={(e) => {
                     if (onContextMenu) {
@@ -169,7 +210,6 @@ function MoveList({ tree, currentNodeId, onSelect, onContextMenu }) {
                       onContextMenu(cell.nodeId, e.clientX, e.clientY);
                     }
                   }}
-                  style={{ cursor: 'pointer' }}
                 >
                   {cell.san}
                   <StatusBadge status={cell.status} />

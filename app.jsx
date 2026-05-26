@@ -300,6 +300,36 @@ function App() {
     return () => window.removeEventListener('keydown', onKey);
   }, [currentNodeId, tree, goToNode]);
 
+  // ---- Variation detection ----
+
+  const isInVariation = useMemo(() => {
+    let id = currentNodeId;
+    while (id && id !== tree.rootId) {
+      const node = tree.nodes[id];
+      if (!node?.parentId) break;
+      const parent = tree.nodes[node.parentId];
+      if (!parent) break;
+      if (parent.childIds[0] !== id) return true;
+      id = node.parentId;
+    }
+    return false;
+  }, [tree, currentNodeId]);
+
+  // The mainline sibling at the branch point — used by "← Main line" button
+  const mainlineNodeAtBranch = useMemo(() => {
+    if (!isInVariation) return null;
+    let id = currentNodeId;
+    while (id && id !== tree.rootId) {
+      const node = tree.nodes[id];
+      if (!node?.parentId) break;
+      const parent = tree.nodes[node.parentId];
+      if (!parent) break;
+      if (parent.childIds[0] !== id) return parent.childIds[0];
+      id = node.parentId;
+    }
+    return null;
+  }, [isInVariation, tree, currentNodeId]);
+
   // ---- Move list display ----
 
   const mainlinePlyCount = window.MoveTree.mainlineDepth(tree);
@@ -514,9 +544,19 @@ function App() {
             ) : (
               <>
                 <div className="section-label">
-                  <span>Move Record</span>
+                  <span>{isInVariation ? 'Variation' : 'Move Record'}</span>
                   <span className="count">{mainlinePlyCount} {mainlinePlyCount === 1 ? 'ply' : 'plies'}</span>
                 </div>
+                {isInVariation && (
+                  <div className="variation-banner">
+                    <span>Side line</span>
+                    {mainlineNodeAtBranch && (
+                      <button className="variation-banner-back" onClick={() => goToNode(mainlineNodeAtBranch)}>
+                        ← Main line
+                      </button>
+                    )}
+                  </div>
+                )}
                 <div className="moves-scroll">
                   <window.MoveList
                     tree={tree}
