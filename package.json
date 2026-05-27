@@ -1,8 +1,8 @@
 {
   "name": "repertoire",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Desktop tool for studying chess opening repertoires from memory.",
-  "author": "Dane Balia",
+  "author": "Dane Balia <dane.balia@gmail.com>",
   "type": "module",
   "private": true,
   "main": "electron/main.cjs",
