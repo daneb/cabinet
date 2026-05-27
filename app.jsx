@@ -82,10 +82,46 @@ function App() {
   } = window.useDrill(tree, setTree, currentNodeId, setCurrentNodeId);
 
   const handleDrillContext = useCallback((nodeId, x, y) => {
-    setDrillMenu({ nodeId, x, y });
-  }, []);
+    // Find the root of the variation if this node lives inside one
+    let variationRoot = null;
+    let id = nodeId;
+    while (id && id !== tree.rootId) {
+      const node = tree.nodes[id];
+      if (!node?.parentId) break;
+      const parent = tree.nodes[node.parentId];
+      if (!parent) break;
+      if (parent.childIds[0] !== id) { variationRoot = id; break; }
+      id = node.parentId;
+    }
+    setDrillMenu({ nodeId, x, y, variationRoot });
+  }, [tree]);
 
   const closeDrillMenu = useCallback(() => setDrillMenu(null), []);
+
+  const handleDeleteFrom = useCallback((nodeId) => {
+    if (!nodeId || nodeId === tree.rootId) return;
+    const node = tree.nodes[nodeId];
+    if (!node) return;
+    // If the cursor sits inside the subtree being removed, land on the parent
+    const isInSubtree = (cursor, root) => {
+      let id = cursor;
+      while (id) {
+        if (id === root) return true;
+        id = tree.nodes[id]?.parentId;
+      }
+      return false;
+    };
+    const newTree = window.MoveTree.deleteSubtree(tree, nodeId);
+    setTree(newTree);
+    if (isInSubtree(currentNodeId, nodeId)) {
+      setCurrentNodeId(node.parentId || newTree.rootId);
+    }
+    setSelected(null);
+    setLegalTargets([]);
+    setDirty(true);
+    closeDrillMenu();
+    showToast('Deleted');
+  }, [tree, currentNodeId, closeDrillMenu, showToast]);
 
   // ---- Apply decay on load ----
 
@@ -673,6 +709,23 @@ function App() {
               onClick={() => { startDrill(drillMenu.nodeId, 'w', 'mainline'); closeDrillMenu(); }}
             >
               Drill from here (mainline only)
+            </button>
+            <div style={{ margin: '4px 0', borderTop: '1px solid var(--rule)' }} />
+            {drillMenu.variationRoot && (
+              <button
+                className="btn btn-ghost"
+                style={{ display: 'block', width: '100%', textAlign: 'left', padding: '6px 12px', fontSize: 13, color: 'var(--accent)' }}
+                onClick={() => handleDeleteFrom(drillMenu.variationRoot)}
+              >
+                Delete variation
+              </button>
+            )}
+            <button
+              className="btn btn-ghost"
+              style={{ display: 'block', width: '100%', textAlign: 'left', padding: '6px 12px', fontSize: 13, color: 'var(--accent)' }}
+              onClick={() => handleDeleteFrom(drillMenu.nodeId)}
+            >
+              Delete from here
             </button>
           </div>
         </div>
