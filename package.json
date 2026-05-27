@@ -1,6 +1,6 @@
 {
   "name": "repertoire",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Desktop tool for studying chess opening repertoires from memory.",
   "author": "Dane Balia",
   "type": "module",
@@ -40,6 +40,11 @@
       "target": "dmg",
       "icon": "assets/cabinet.png",
       "category": "public.app-category.games"
+    },
+    "linux": {
+      "target": ["deb", "AppImage"],
+      "icon": "assets/cabinet.png",
+      "category": "Game"
     },
     "publish": {
       "provider": "github",

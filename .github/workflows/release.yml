@@ -1,4 +1,4 @@
-name: Release DMG
+name: Release
 
 on:
   push:
@@ -7,7 +7,15 @@ on:
 
 jobs:
   release:
-    runs-on: macos-latest
+    strategy:
+      matrix:
+        include:
+          - os: macos-latest
+            args: --mac dmg
+          - os: ubuntu-latest
+            args: --linux deb AppImage
+
+    runs-on: ${{ matrix.os }}
 
     permissions:
       contents: write
@@ -25,7 +33,7 @@ jobs:
       - name: Build app bundle
         run: npm run build
 
-      - name: Package DMG
-        run: npx electron-builder --mac dmg --publish always
+      - name: Package
+        run: npx electron-builder ${{ matrix.args }} --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
