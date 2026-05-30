@@ -650,8 +650,7 @@ function App() {
 
       {drillMenu ? (
         <div
-          className="promotion-overlay"
-          style={{ background: 'transparent' }}
+          style={{ position: 'fixed', inset: 0, zIndex: 9000 }}
           onClick={closeDrillMenu}
           onContextMenu={(e) => { e.preventDefault(); closeDrillMenu(); }}
         >
@@ -660,25 +659,25 @@ function App() {
               position: 'fixed',
               left: drillMenu.x,
               top: drillMenu.y,
-              background: 'var(--surface)',
-              border: '1px solid var(--ink-4)',
-              borderRadius: 4,
+              background: 'var(--paper)',
+              border: '1px solid var(--rule)',
+              borderRadius: 6,
               padding: '4px 0',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-              zIndex: 1000,
-              minWidth: 180,
+              boxShadow: '0 4px 16px rgba(0,0,0,0.28)',
+              zIndex: 9001,
+              minWidth: 200,
             }}
           >
             <button
               className="btn btn-ghost"
-              style={{ display: 'block', width: '100%', textAlign: 'left', padding: '6px 12px', fontSize: 13 }}
+              style={{ display: 'block', width: '100%', textAlign: 'left', padding: '7px 14px', fontSize: 13, color: 'var(--ink)' }}
               onClick={() => { startDrill(drillMenu.nodeId, 'w', 'any'); closeDrillMenu(); }}
             >
               Drill from here (any book)
             </button>
             <button
               className="btn btn-ghost"
-              style={{ display: 'block', width: '100%', textAlign: 'left', padding: '6px 12px', fontSize: 13 }}
+              style={{ display: 'block', width: '100%', textAlign: 'left', padding: '7px 14px', fontSize: 13, color: 'var(--ink)' }}
               onClick={() => { startDrill(drillMenu.nodeId, 'w', 'mainline'); closeDrillMenu(); }}
             >
               Drill from here (mainline only)
@@ -687,7 +686,7 @@ function App() {
             {drillMenu.variationRoot && (
               <button
                 className="btn btn-ghost"
-                style={{ display: 'block', width: '100%', textAlign: 'left', padding: '6px 12px', fontSize: 13, color: 'var(--accent)' }}
+                style={{ display: 'block', width: '100%', textAlign: 'left', padding: '7px 14px', fontSize: 13, color: 'var(--accent)' }}
                 onClick={() => handleDeleteFrom(drillMenu.variationRoot)}
               >
                 Delete variation
@@ -695,7 +694,7 @@ function App() {
             )}
             <button
               className="btn btn-ghost"
-              style={{ display: 'block', width: '100%', textAlign: 'left', padding: '6px 12px', fontSize: 13, color: 'var(--accent)' }}
+              style={{ display: 'block', width: '100%', textAlign: 'left', padding: '7px 14px', fontSize: 13, color: 'var(--accent)' }}
               onClick={() => handleDeleteFrom(drillMenu.nodeId)}
             >
               Delete from here
