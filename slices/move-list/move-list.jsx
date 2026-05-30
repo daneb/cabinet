@@ -1,4 +1,4 @@
-// Tree-formatted move list — mainline with indented variations.
+// Move list — clean main-line table plus anchored side-line note cards.
 
 const { useRef, useEffect, useMemo } = React;
 
@@ -16,152 +16,181 @@ function computeActivePath(tree, currentNodeId) {
   return path;
 }
 
-// ---- Row builder ----
-
-function buildRows(tree, currentNodeId, activePath) {
-  const rows = []; // { depth, moveNum, isVariation, hasActivePath, cells: [{type, nodeId, san, status, isCurrent, isOnPath}] }
-
-  function walk(nodeId, depth, moveNum) {
-    const node = tree.nodes[nodeId];
-    if (!node || !node.san) {
-      if (node && node.childIds[0]) walk(node.childIds[0], 0, 1);
-      return;
-    }
-
-    const isWhite = node.ply % 2 === 1;
-
-    if (isWhite) {
-      const row = { depth, moveNum, cells: [] };
-      row.cells.push({ type: 'moveNum', value: moveNum });
-      row.cells.push({ type: 'san', nodeId, san: node.san, status: node.status, isCurrent: nodeId === currentNodeId, isOnPath: activePath.has(nodeId) });
-      rows.push(row);
-
-      if (node.childIds.length > 0) walkBlack(node.childIds[0], depth, moveNum);
-      // Alternative Black responses (variations off a White move)
-      for (let i = 1; i < node.childIds.length; i++) {
-        walkVariation(node.childIds[i], depth + 1, moveNum);
-      }
-    }
-  }
-
-  function walkBlack(nodeId, depth, moveNum) {
-    const node = tree.nodes[nodeId];
-    if (!node || !node.san) return;
-
-    const row = rows[rows.length - 1];
-    row.cells.push({ type: 'san', nodeId, san: node.san, status: node.status, isCurrent: nodeId === currentNodeId, isOnPath: activePath.has(nodeId) });
-
-    if (node.childIds.length > 0) walk(node.childIds[0], depth, moveNum + 1);
-
-    // Variation siblings
-    for (let i = 1; i < node.childIds.length; i++) {
-      walkVariation(node.childIds[i], depth + 1, moveNum);
-    }
-  }
-
-  function walkVariation(nodeId, depth, moveNum) {
-    const node = tree.nodes[nodeId];
-    if (!node) return;
-
-    const isWhite = node.ply % 2 === 1;
-    const beforeIdx = rows.length;
-
-    if (isWhite) {
-      const row = { depth, moveNum, cells: [], isVariation: true };
-      row.cells.push({ type: 'paren', value: '(' });
-      row.cells.push({ type: 'moveNum', value: moveNum });
-      row.cells.push({ type: 'san', nodeId, san: node.san, status: node.status, isCurrent: nodeId === currentNodeId, isOnPath: activePath.has(nodeId) });
-      rows.push(row);
-
-      if (node.childIds.length > 0) {
-        walkVarBlack(node.childIds[0], depth, moveNum);
-      } else {
-        row.cells.push({ type: 'paren', value: ')' });
-      }
-    } else {
-      // Black-start variation
-      const row = { depth, moveNum: null, cells: [], isVariation: true };
-      row.cells.push({ type: 'paren', value: '(' });
-      row.cells.push({ type: 'moveNum', value: moveNum, ellipsis: true });
-      row.cells.push({ type: 'san', nodeId, san: node.san, status: node.status, isCurrent: nodeId === currentNodeId, isOnPath: activePath.has(nodeId) });
-      rows.push(row);
-
-      if (node.childIds.length > 0) {
-        // White's response is at moveNum+1
-        walkVarBlack(node.childIds[0], depth, moveNum + 1);
-      } else {
-        row.cells.push({ type: 'paren', value: ')' });
-      }
-    }
-
-    // After walking the variation subtree, ensure the last row has a closing paren
-    const lastRow = rows[rows.length - 1];
-    if (lastRow && rows.length > beforeIdx) {
-      const lastCell = lastRow.cells[lastRow.cells.length - 1];
-      if (!lastCell || lastCell.type !== 'paren' || lastCell.value !== ')') {
-        lastRow.cells.push({ type: 'paren', value: ')' });
-      }
-    }
-  }
-
-  function walkVarBlack(nodeId, depth, moveNum) {
-    const node = tree.nodes[nodeId];
-    if (!node || !node.san) {
-      const row = rows[rows.length - 1];
-      if (row) row.cells.push({ type: 'paren', value: ')' });
-      return;
-    }
-
-    const isWhite = node.ply % 2 === 1;
-
-    if (isWhite) {
-      // White continuation in a black-start variation — needs its own row
-      const newRow = { depth, moveNum, cells: [], isVariation: true };
-      newRow.cells.push({ type: 'moveNum', value: moveNum });
-      newRow.cells.push({ type: 'san', nodeId, san: node.san, status: node.status, isCurrent: nodeId === currentNodeId, isOnPath: activePath.has(nodeId) });
-      rows.push(newRow);
-      if (node.childIds.length > 0) {
-        walkVarBlack(node.childIds[0], depth, moveNum);
-      }
-    } else {
-      // Black move — append to the current row
-      const row = rows[rows.length - 1];
-      row.cells.push({ type: 'san', nodeId, san: node.san, status: node.status, isCurrent: nodeId === currentNodeId, isOnPath: activePath.has(nodeId) });
-
-      if (node.childIds.length > 0) {
-        // Continue the variation (next is White)
-        walk(node.childIds[0], depth, moveNum + 1);
-        // Sub-variations
-        for (let i = 1; i < node.childIds.length; i++) {
-          walkVariation(node.childIds[i], depth + 1, moveNum);
-        }
-      }
-    }
-  }
-
-  // Start from root
-  const root = tree.nodes[tree.rootId];
-  if (root && root.childIds.length > 0) {
-    walk(root.childIds[0], 0, 1);
-  }
-
-  // Mark variation rows that contain the active cursor path
-  for (const row of rows) {
-    if (row.isVariation) {
-      row.hasActivePath = row.cells.some(c => c.type === 'san' && c.isOnPath);
-    }
-  }
-
-  return rows;
+function moveNumOf(node) {
+  return Math.ceil(node.ply / 2);
+}
+function isWhiteMove(node) {
+  return node.ply % 2 === 1;
+}
+function moveLabel(node) {
+  return `${moveNumOf(node)}${isWhiteMove(node) ? '.' : '…'} ${node.san}`;
 }
 
-// ---- Component ----
+// ---- Model builder ----
+//
+// Produces a clean main line (the childIds[0] chain) and a flat, reading-ordered
+// list of side-line cards. Every move number derives from `ply`, so it is correct
+// regardless of how deeply a line is nested. Markers (a, b, … / a.1, a.2) tie an
+// anchor move in one line to its alternative cards.
 
-function MoveList({ tree, currentNodeId, onSelect, onContextMenu }) {
+function buildMoveModel(tree, currentNodeId) {
+  const activePath = computeActivePath(tree, currentNodeId);
+  const cards = [];                 // flat, in reading order; each has a `depth`
+  const labelToFirstNode = {};      // marker label -> first node id of that card
+  let topCounter = 0;               // a, b, c … for side lines off the main line
+
+  function makeCell(node) {
+    return {
+      nodeId: node.id,
+      san: node.san,
+      status: node.status,
+      isWhite: isWhiteMove(node),
+      moveNum: moveNumOf(node),
+      isCurrent: node.id === currentNodeId,
+      isOnPath: activePath.has(node.id),
+      markers: null,                // filled in below for anchor moves
+    };
+  }
+
+  // Walk one line (a childIds[0] chain from firstNodeId), assign markers to anchor
+  // moves, and recursively spawn cards for each alternative. parentLabel === null
+  // means this is the main line.
+  function processLine(firstNodeId, parentLabel, depth) {
+    const cells = [];
+    const byId = {};
+    let id = firstNodeId;
+    while (id) {
+      const node = tree.nodes[id];
+      if (!node || !node.san) break;
+      const cell = makeCell(node);
+      cells.push(cell);
+      byId[id] = cell;
+      id = node.childIds[0] || null;
+    }
+
+    // Find branch points along this line: a node whose parent has >1 children.
+    let nestedCounter = 0;
+    for (const cell of cells) {
+      const node = tree.nodes[cell.nodeId];
+      const parent = tree.nodes[node.parentId];
+      if (!parent || parent.childIds.length <= 1) continue;
+      if (parent.childIds[0] !== node.id) continue; // only anchor on the line's own move
+      const alternatives = parent.childIds.slice(1);
+      cell.markers = cell.markers || [];
+      for (const altId of alternatives) {
+        const label = parentLabel == null
+          ? String.fromCharCode(97 + topCounter++)
+          : `${parentLabel}.${++nestedCounter}`;
+        cell.markers.push(label);
+        labelToFirstNode[label] = altId;
+        spawnCard(label, altId, node, depth);
+      }
+    }
+    return cells;
+  }
+
+  // Create a card for one alternative, then process its continuation (which appends
+  // any nested cards immediately after, preserving reading order).
+  function spawnCard(label, altFirstId, anchorNode, depth) {
+    const altNode = tree.nodes[altFirstId];
+    const card = {
+      label,
+      depth,
+      firstNodeId: altFirstId,
+      anchorNodeId: anchorNode.id,
+      insteadOf: moveLabel(anchorNode),
+      firstMove: moveLabel(altNode),
+      cells: null,
+      hasCurrent: false,
+    };
+    cards.push(card);
+    const cells = processLine(altFirstId, label, depth + 1);
+    // Number labels for inline rendering inside the card.
+    cells.forEach((c, idx) => {
+      if (c.isWhite) c.numLabel = `${c.moveNum}.`;
+      else if (idx === 0) c.numLabel = `${c.moveNum}…`;
+      else c.numLabel = null;
+    });
+    card.cells = cells;
+    card.hasCurrent = cells.some(c => c.isCurrent);
+  }
+
+  // Main line is the root's childIds[0] chain.
+  const root = tree.nodes[tree.rootId];
+  const firstMainId = root && root.childIds[0];
+  const mainCells = firstMainId ? processLine(firstMainId, null, 0) : [];
+
+  // Group main-line cells into paired rows (white | black) with a number column.
+  const mainRows = [];
+  for (let i = 0; i < mainCells.length;) {
+    const c = mainCells[i];
+    if (c.isWhite) {
+      const next = mainCells[i + 1];
+      if (next && !next.isWhite) {
+        mainRows.push({ moveNum: c.moveNum, white: c, black: next });
+        i += 2;
+      } else {
+        mainRows.push({ moveNum: c.moveNum, white: c, black: null });
+        i += 1;
+      }
+    } else {
+      mainRows.push({ moveNum: c.moveNum, white: null, black: c });
+      i += 1;
+    }
+  }
+
+  return { mainRows, cards, labelToFirstNode };
+}
+
+// ---- Shared bits ----
+
+function StatusBadge({ status }) {
+  if (!status || status === 'unseen') return null;
+  if (status === 'reviewing') return <span className="mv-status reviewing">●</span>;
+  if (status === 'known') return <span className="mv-status known">✓</span>;
+  return null;
+}
+
+function Markers({ markers, onMarkerClick }) {
+  if (!markers || markers.length === 0) return null;
+  return (
+    <>
+      {markers.map((m) => (
+        <button
+          key={m}
+          className="mv-marker"
+          title={`Side line ${m}`}
+          onClick={(e) => { e.stopPropagation(); onMarkerClick && onMarkerClick(m); }}
+        >
+          {m}
+        </button>
+      ))}
+    </>
+  );
+}
+
+function MoveToken({ cell, onSelect, onContextMenu, onMarkerClick }) {
+  const cls = cell.isCurrent ? 'current' : cell.isOnPath ? 'on-path' : '';
+  return (
+    <span
+      className={`mv${cls ? ' ' + cls : ''}`}
+      onClick={() => onSelect && onSelect(cell.nodeId)}
+      onContextMenu={(e) => {
+        if (onContextMenu) { e.preventDefault(); onContextMenu(cell.nodeId, e.clientX, e.clientY); }
+      }}
+    >
+      {cell.san}
+      <StatusBadge status={cell.status} />
+      <Markers markers={cell.markers} onMarkerClick={onMarkerClick} />
+    </span>
+  );
+}
+
+// ---- Main line table ----
+
+function MoveList({ model, currentNodeId, onSelect, onContextMenu, onMarkerClick }) {
   const scrollRef = useRef(null);
-
-  const activePath = useMemo(() => computeActivePath(tree, currentNodeId), [tree, currentNodeId]);
-  const rows = tree ? buildRows(tree, currentNodeId, activePath) : [];
+  const rows = model ? model.mainRows : [];
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -171,64 +200,82 @@ function MoveList({ tree, currentNodeId, onSelect, onContextMenu }) {
   }, [currentNodeId]);
 
   if (rows.length === 0) {
-    return (
-      <div className="moves-empty" ref={scrollRef}>
-        Awaiting the first move.
-      </div>
-    );
+    return <div className="moves-empty" ref={scrollRef}>Awaiting the first move.</div>;
   }
 
   return (
-    <div className="moves-tree" ref={scrollRef}>
+    <div className="moves-main" ref={scrollRef}>
       {rows.map((row, ri) => (
-        <div
-          key={ri}
-          className={`move-row${row.isVariation && row.hasActivePath ? ' in-variation-path' : ''}`}
-          style={{ paddingLeft: row.depth * 20, display: 'flex', alignItems: 'baseline', gap: 4, fontSize: 13, lineHeight: '1.7' }}
-        >
-          {row.cells.map((cell, ci) => {
-            if (cell.type === 'moveNum') {
-              return (
-                <span key={ci} className="mv-num" style={{ color: 'var(--ink-3)', minWidth: 24, textAlign: 'right' }}>
-                  {cell.value}{cell.ellipsis ? '...' : '.'}
-                </span>
-              );
-            }
-            if (cell.type === 'paren') {
-              return <span key={ci} style={{ color: 'var(--ink-3)' }}>{cell.value}</span>;
-            }
-            if (cell.type === 'san') {
-              const cls = cell.isCurrent ? 'current' : cell.isOnPath ? 'on-path' : '';
-              return (
-                <span
-                  key={ci}
-                  className={`mv${cls ? ' ' + cls : ''}`}
-                  onClick={() => onSelect && onSelect(cell.nodeId)}
-                  onContextMenu={(e) => {
-                    if (onContextMenu) {
-                      e.preventDefault();
-                      onContextMenu(cell.nodeId, e.clientX, e.clientY);
-                    }
-                  }}
-                >
-                  {cell.san}
-                  <StatusBadge status={cell.status} />
-                </span>
-              );
-            }
-            return null;
-          })}
+        <div key={ri} className="main-row">
+          <span className="mv-num">{row.moveNum}.</span>
+          <span className="mv-slot">
+            {row.white
+              ? <MoveToken cell={row.white} onSelect={onSelect} onContextMenu={onContextMenu} onMarkerClick={onMarkerClick} />
+              : <span className="mv-ellipsis">…</span>}
+          </span>
+          <span className="mv-slot">
+            {row.black
+              ? <MoveToken cell={row.black} onSelect={onSelect} onContextMenu={onContextMenu} onMarkerClick={onMarkerClick} />
+              : null}
+          </span>
         </div>
       ))}
     </div>
   );
 }
 
-function StatusBadge({ status }) {
-  if (!status || status === 'unseen') return null;
-  if (status === 'reviewing') return <span style={{ color: '#d4a017', marginLeft: 3, fontSize: 11 }}>●</span>;
-  if (status === 'known') return <span style={{ color: '#3a8', marginLeft: 3, fontSize: 11 }}>✓</span>;
-  return null;
+// ---- Side-line note cards ----
+
+function SideLines({ model, currentNodeId, onSelect, onContextMenu, onMarkerClick }) {
+  const cards = model ? model.cards : [];
+  const activeRef = useRef(null);
+
+  useEffect(() => {
+    if (activeRef.current) activeRef.current.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+  }, [currentNodeId]);
+
+  if (cards.length === 0) return null;
+
+  return (
+    <div className="side-lines">
+      <div className="section-label">
+        <span>Side Lines</span>
+        <span className="count">{cards.length}</span>
+      </div>
+      <div className="side-lines-list">
+        {cards.map((card) => (
+          <div
+            key={card.label}
+            id={`sl-${card.label}`}
+            ref={card.hasCurrent ? activeRef : null}
+            className={`side-card${card.hasCurrent ? ' active' : ''}`}
+            style={{ marginLeft: card.depth ? (card.depth - 1) * 16 : 0 }}
+          >
+            <div className="side-card-head">
+              <span className="side-card-label">{card.label}</span>
+              <button
+                className="side-card-anchor"
+                title="Jump to the move this branches from"
+                onClick={() => onSelect && onSelect(card.anchorNodeId)}
+              >
+                ↑ instead of {card.insteadOf}
+              </button>
+            </div>
+            <div className="side-card-moves">
+              {card.cells.map((cell, ci) => (
+                <span key={ci} className="side-move">
+                  {cell.numLabel ? <span className="mv-num inline">{cell.numLabel}</span> : null}
+                  <MoveToken cell={cell} onSelect={onSelect} onContextMenu={onContextMenu} onMarkerClick={onMarkerClick} />
+                </span>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
+window.buildMoveModel = buildMoveModel;
 window.MoveList = MoveList;
+window.SideLines = SideLines;

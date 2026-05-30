@@ -435,61 +435,133 @@ body {
 .moves-grid .mv.empty { color: var(--ink-3); cursor: default; border-left-color: transparent; }
 .moves-grid .mv.empty:hover { background: transparent; }
 
-/* Tree-style move list (the active layout) */
-.moves-tree .mv {
-  display: inline-block;
+/* Shared move token */
+.mv {
+  display: inline-flex;
+  align-items: baseline;
   cursor: pointer;
   border-radius: 3px;
   border-left: 2px solid transparent;
   padding: 1px 5px;
-  margin: 0 1px;
   transition: background 80ms ease;
   color: var(--ink-2);
 }
-.moves-tree .mv:hover { background: rgba(31,26,20,0.07); color: var(--ink); }
-.moves-tree .mv.on-path { color: var(--ink); font-weight: 500; }
-.moves-tree .mv.current {
+.mv:hover { background: rgba(31,26,20,0.07); color: var(--ink); }
+.mv.on-path { color: var(--ink); font-weight: 500; }
+.mv.current {
   background: var(--ink);
   color: var(--paper);
   font-weight: 600;
   border-left: 2px solid var(--accent);
 }
-/* Variation row that contains the cursor path */
-.move-row.in-variation-path {
-  background: rgba(138,42,31,0.05);
-  border-radius: 3px;
-  margin: 1px -4px;
-  padding-right: 4px;
-}
+.mv-status { margin-left: 3px; font-size: 11px; }
+.mv-status.reviewing { color: #d4a017; }
+.mv-status.known { color: #3a8; }
 
-/* Variation banner shown when cursor is off the mainline */
-.variation-banner {
+/* Main-line table */
+.moves-main {
+  font-family: var(--mono);
+  font-size: 15px;
+}
+.main-row {
+  display: grid;
+  grid-template-columns: 30px 1fr 1fr;
+  align-items: baseline;
+  column-gap: 4px;
+  padding: 1px 0;
+}
+.main-row .mv-num {
+  color: var(--ink-3);
+  text-align: right;
+  padding-right: 6px;
+  font-variant-numeric: tabular-nums;
+}
+.main-row .mv-slot { min-width: 0; }
+.main-row .mv-ellipsis { color: var(--ink-3); padding-left: 5px; }
+
+/* Side-line anchor marker chip */
+.mv-marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 15px;
+  height: 15px;
+  margin-left: 4px;
+  padding: 0 3px;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--accent);
+  background: rgba(138,42,31,0.10);
+  border: 1px solid rgba(138,42,31,0.30);
+  border-radius: 4px;
+  cursor: pointer;
+  vertical-align: baseline;
+}
+.mv-marker:hover { background: rgba(138,42,31,0.20); }
+
+/* Side-line note cards */
+.side-lines { margin-top: 16px; }
+.side-lines-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.side-card {
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--rule);
+  border-radius: 4px;
+  padding: 7px 9px;
+  background: var(--paper);
+}
+.side-card.active {
+  border-left-color: var(--accent);
+  background: rgba(138,42,31,0.04);
+}
+.side-card-head {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  font-family: var(--mono);
-  font-size: 9px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--accent);
-  background: rgba(138,42,31,0.06);
-  border: 1px solid rgba(138,42,31,0.18);
-  border-radius: 4px;
-  padding: 5px 10px;
-  margin-bottom: 10px;
+  gap: 8px;
+  margin-bottom: 5px;
 }
-.variation-banner-back {
+.side-card-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--paper);
+  background: var(--accent);
+  border-radius: 4px;
+}
+.side-card-anchor {
   background: none;
   border: none;
   cursor: pointer;
   font-family: var(--mono);
-  font-size: 9px;
-  letter-spacing: 0.10em;
+  font-size: 10px;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--ink-3);
   padding: 0;
 }
-.variation-banner-back:hover { color: var(--ink); }
+.side-card-anchor:hover { color: var(--accent); }
+.side-card-moves {
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 1.6;
+}
+.side-move { display: inline-flex; align-items: baseline; margin-right: 2px; }
+.side-move .mv-num.inline {
+  color: var(--ink-3);
+  margin-right: 2px;
+  font-variant-numeric: tabular-nums;
+}
 
 .moves-empty {
   font-family: var(--serif);

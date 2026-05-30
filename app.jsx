@@ -336,37 +336,17 @@ function App() {
     return () => window.removeEventListener('keydown', onKey);
   }, [currentNodeId, tree, goToNode]);
 
-  // ---- Variation detection ----
-
-  const isInVariation = useMemo(() => {
-    let id = currentNodeId;
-    while (id && id !== tree.rootId) {
-      const node = tree.nodes[id];
-      if (!node?.parentId) break;
-      const parent = tree.nodes[node.parentId];
-      if (!parent) break;
-      if (parent.childIds[0] !== id) return true;
-      id = node.parentId;
-    }
-    return false;
-  }, [tree, currentNodeId]);
-
-  // The mainline sibling at the branch point — used by "← Main line" button
-  const mainlineNodeAtBranch = useMemo(() => {
-    if (!isInVariation) return null;
-    let id = currentNodeId;
-    while (id && id !== tree.rootId) {
-      const node = tree.nodes[id];
-      if (!node?.parentId) break;
-      const parent = tree.nodes[node.parentId];
-      if (!parent) break;
-      if (parent.childIds[0] !== id) return parent.childIds[0];
-      id = node.parentId;
-    }
-    return null;
-  }, [isInVariation, tree, currentNodeId]);
-
   // ---- Move list display ----
+
+  const moveModel = useMemo(() => window.buildMoveModel(tree, currentNodeId), [tree, currentNodeId]);
+
+  const handleMarkerClick = useCallback((label) => {
+    const target = moveModel.labelToFirstNode[label];
+    if (target) goToNode(target);
+    const el = document.getElementById(`sl-${label}`);
+    if (el) el.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+  }, [moveModel, goToNode]);
+
 
   const mainlinePlyCount = window.MoveTree.mainlineDepth(tree);
 
@@ -379,23 +359,18 @@ function App() {
   // ---- Save / Load / Delete ----
 
   const handleSave = (name) => {
-    const id = activeId || window.MoveTree.uuid();
+    // Key the target off the typed name: an existing name overwrites that record,
+    // a new name creates a new line. (activeId is informational only.)
+    const byName = saves.find(s => s.name.toLowerCase() === name.toLowerCase());
+    const id = byName ? byName.id : window.MoveTree.uuid();
     const payload = { id, name, tree, cursorOn: currentNodeId, updatedAt: Date.now() };
-    const existing = saves.find(s => s.id === id);
     let next;
-    if (existing) {
+    if (byName) {
       next = saves.map(s => s.id === id ? payload : s);
       showToast(`Updated "${name}"`);
     } else {
-      const byName = saves.find(s => s.name.toLowerCase() === name.toLowerCase());
-      if (byName) {
-        payload.id = byName.id;
-        next = saves.map(s => s.id === byName.id ? payload : s);
-        showToast(`Overwrote "${name}"`);
-      } else {
-        next = [payload, ...saves];
-        showToast(`Saved as "${name}"`);
-      }
+      next = [payload, ...saves];
+      showToast(`Saved as "${name}"`);
     }
     next.sort((a, b) => b.updatedAt - a.updatedAt);
     setSaves(next);
@@ -580,25 +555,23 @@ function App() {
             ) : (
               <>
                 <div className="section-label">
-                  <span>{isInVariation ? 'Variation' : 'Move Record'}</span>
+                  <span>Main Line</span>
                   <span className="count">{mainlinePlyCount} {mainlinePlyCount === 1 ? 'ply' : 'plies'}</span>
                 </div>
-                {isInVariation && (
-                  <div className="variation-banner">
-                    <span>Side line</span>
-                    {mainlineNodeAtBranch && (
-                      <button className="variation-banner-back" onClick={() => goToNode(mainlineNodeAtBranch)}>
-                        ← Main line
-                      </button>
-                    )}
-                  </div>
-                )}
                 <div className="moves-scroll">
                   <window.MoveList
-                    tree={tree}
+                    model={moveModel}
                     currentNodeId={currentNodeId}
                     onSelect={(nodeId) => goToNode(nodeId)}
                     onContextMenu={handleDrillContext}
+                    onMarkerClick={handleMarkerClick}
+                  />
+                  <window.SideLines
+                    model={moveModel}
+                    currentNodeId={currentNodeId}
+                    onSelect={(nodeId) => goToNode(nodeId)}
+                    onContextMenu={handleDrillContext}
+                    onMarkerClick={handleMarkerClick}
                   />
                 </div>
                 <window.NavControls

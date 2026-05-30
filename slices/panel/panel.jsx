@@ -25,7 +25,7 @@ function NavControls({ atStart, atEnd, onStart, onBack, onForward, onEnd, onFlip
 function SavePanel({ saves, activeId, onSave, onLoad, onDelete, currentName }) {
   const [name, setName] = React.useState('');
   React.useEffect(() => {
-    if (currentName) setName(currentName);
+    setName(currentName || '');
   }, [currentName]);
 
   const submit = (e) => {
