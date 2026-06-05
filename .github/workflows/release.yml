@@ -6,8 +6,21 @@ on:
       - 'v*.*.*'
 
 jobs:
-  release:
+  create-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Create draft release
+        run: gh release create ${{ github.ref_name }} --draft --title "${{ github.ref_name }}" --notes ""
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+
+  build:
+    needs: create-release
     strategy:
+      fail-fast: false
       matrix:
         include:
           - os: macos-latest
@@ -33,7 +46,19 @@ jobs:
       - name: Build app bundle
         run: npm run build
 
-      - name: Package
+      - name: Package and upload
         run: npx electron-builder ${{ matrix.args }} --publish always
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Publish release
+        run: gh release edit ${{ github.ref_name }} --draft=false --latest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
