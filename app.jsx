@@ -13,6 +13,8 @@ import './slices/drill/drill.jsx';
 
 const { useState, useEffect, useCallback, useMemo, useRef } = React;
 
+const SYNC_POLL_MS = 30000;
+
 const STORAGE_KEY = 'chess_analysis_saves_v2';
 const SESSION_KEY = 'chess_analysis_session_v2';
 const V1_SAVES_KEY = 'chess_analysis_saves_v1';
@@ -66,6 +68,11 @@ function App() {
   const [showImport, setShowImport] = useState(false);
   const [importText, setImportText] = useState('');
   const [drillMenu, setDrillMenu] = useState(null); // { nodeId, x, y }
+  const [syncStatus, setSyncStatus] = useState(null); // { enabled, lastSync, lastError, bannerDismissed, repoUrl }
+  const [syncBannerDismissed, setSyncBannerDismissed] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const syncingTimerRef = useRef(null);
+  const syncSectionRef = useRef(null);
 
   const toastTimerRef = useRef(null);
   const showToast = useCallback((msg) => {
@@ -73,6 +80,42 @@ function App() {
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     toastTimerRef.current = setTimeout(() => setToast(null), 1800);
   }, []);
+
+  // ---- Sync status polling ----
+
+  const fetchSyncStatus = useCallback(async () => {
+    try {
+      const res = await fetch('/api/sync/status');
+      if (res.ok) {
+        const s = await res.json();
+        setSyncStatus(s);
+        if (s.bannerDismissed) setSyncBannerDismissed(true);
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    fetchSyncStatus();
+    const interval = setInterval(fetchSyncStatus, SYNC_POLL_MS);
+    return () => clearInterval(interval);
+  }, [fetchSyncStatus]);
+
+  const handlePull = useCallback(async () => {
+    try {
+      const res = await fetch('/api/sync/pull', { method: 'POST' });
+      const data = await res.json();
+      if (data.ok && data.saves) {
+        setSaves(data.saves);
+        persistSavesLocal(data.saves);
+        showToast('Pulled from GitHub');
+        fetchSyncStatus();
+      } else {
+        showToast(data.error || 'Pull failed');
+      }
+    } catch {
+      showToast('Pull failed');
+    }
+  }, [fetchSyncStatus, showToast]);
 
   // ---- Drill mode ----
 
@@ -379,6 +422,12 @@ function App() {
     setActiveId(payload.id);
     setActiveName(name);
     setDirty(false);
+
+    if (syncStatus && syncStatus.enabled) {
+      setSyncing(true);
+      if (syncingTimerRef.current) clearTimeout(syncingTimerRef.current);
+      syncingTimerRef.current = setTimeout(() => { setSyncing(false); fetchSyncStatus(); }, 5000);
+    }
   };
 
   const handleLoad = (id) => {
@@ -404,6 +453,12 @@ function App() {
     persistSavesToDisk(next);
     if (activeId === id) { setActiveId(null); setActiveName(''); }
     showToast(`Deleted "${s.name}"`);
+
+    if (syncStatus && syncStatus.enabled) {
+      setSyncing(true);
+      if (syncingTimerRef.current) clearTimeout(syncingTimerRef.current);
+      syncingTimerRef.current = setTimeout(() => { setSyncing(false); fetchSyncStatus(); }, 5000);
+    }
   };
 
   const handleNew = () => {
@@ -468,6 +523,14 @@ function App() {
           <span className="brand-sub">Opening Analysis Board</span>
         </div>
         <div className="topbar-right">
+          {syncStatus && syncStatus.enabled ? (
+            <div
+              className={`sync-indicator${syncing ? ' syncing' : syncStatus.lastError ? ' error' : ' ok'}`}
+              title={syncing ? '' : syncStatus.lastError || (syncStatus.lastSync ? `Last synced: ${new Date(syncStatus.lastSync).toLocaleString()}` : '')}
+            >
+              {syncing ? '↻ Syncing…' : syncStatus.lastError ? '⚠ Sync error' : '☁ Synced'}
+            </div>
+          ) : null}
           <div className="engine-status">
             <div className={`engine-dot ${engineReady ? 'ready' : ''}`}></div>
             {engineReady ? 'engine on' : 'engine…'}
@@ -485,6 +548,32 @@ function App() {
           <button className="btn btn-ghost" onClick={() => setFlipped(f => !f)}>Flip</button>
         </div>
       </header>
+
+      {!syncBannerDismissed && syncStatus && !syncStatus.enabled ? (
+        <div className="sync-banner">
+          <span>☁ Sync across devices with GitHub</span>
+          <button
+            className="btn btn-ghost"
+            style={{ fontSize: 12, padding: '2px 10px' }}
+            onClick={() => {
+              setSyncBannerDismissed(true);
+              if (syncSectionRef.current) syncSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }}
+          >
+            Set up
+          </button>
+          <button
+            className="btn-icon sync-banner-close"
+            title="Dismiss"
+            onClick={async () => {
+              setSyncBannerDismissed(true);
+              try { await fetch('/api/sync/disconnect', { method: 'POST' }); fetchSyncStatus(); } catch {}
+            }}
+          >
+            ×
+          </button>
+        </div>
+      ) : null}
 
       <div className="main">
         <div className="board-col">
@@ -606,6 +695,18 @@ function App() {
           </div>
 
           <ChapterPanel tree={tree} onSelectChapter={(nodeId) => goToNode(nodeId)} onDrillChapter={(nodeId) => startDrill(nodeId, 'w', 'any')} />
+
+          <div className="panel-section" ref={syncSectionRef}>
+            <div className="section-label">
+              <span>Sync</span>
+            </div>
+            <window.SyncPanel
+              syncStatus={syncStatus}
+              onConnected={() => { fetchSyncStatus(); setSyncBannerDismissed(true); }}
+              onDisconnected={() => { fetchSyncStatus(); }}
+              onPull={handlePull}
+            />
+          </div>
         </aside>
       </div>
 

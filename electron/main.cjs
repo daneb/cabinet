@@ -4,6 +4,7 @@ const { app, BrowserWindow, shell } = require('electron');
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+const sync = require('./sync.cjs');
 
 const PORT = 8765;
 
@@ -64,12 +65,71 @@ function startServer(callback) {
       try {
         const data = await readBody(req);
         writeJSON(SAVES_FILE, data);
+
+        // Background sync — never block the response
+        const cfg = sync.getStatus();
+        if (cfg.enabled) {
+          sync.commitAndPush(DATA_DIR, cfg.pat)
+            .catch(err => console.error('[sync] commitAndPush failed:', err.message));
+        }
+
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ ok: true }));
       } catch {
         res.writeHead(400);
         res.end(JSON.stringify({ ok: false, error: 'Invalid JSON' }));
       }
+      return;
+    }
+
+    if (req.method === 'GET' && urlPath === '/api/sync/status') {
+      const status = sync.getStatus();
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(status));
+      return;
+    }
+
+    if (req.method === 'POST' && urlPath === '/api/sync/init') {
+      try {
+        const body = await readBody(req);
+        if (!body || !body.repoUrl || !body.pat) {
+          res.writeHead(400);
+          res.end(JSON.stringify({ ok: false, error: 'repoUrl and pat are required' }));
+          return;
+        }
+        await sync.initSync(DATA_DIR, body.repoUrl, body.pat);
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true }));
+      } catch (err) {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: false, error: err.message }));
+      }
+      return;
+    }
+
+    if (req.method === 'POST' && urlPath === '/api/sync/pull') {
+      try {
+        const cfg = sync.getStatus();
+        if (!cfg.enabled) {
+          res.writeHead(200, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ ok: false, error: 'Sync not configured' }));
+          return;
+        }
+        await sync.pullSync(DATA_DIR, cfg.pat);
+        const saves = readJSON(SAVES_FILE) || [];
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true, saves }));
+      } catch (err) {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: false, error: err.message }));
+      }
+      return;
+    }
+
+    if (req.method === 'POST' && urlPath === '/api/sync/disconnect') {
+      sync.disconnect();
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true }));
       return;
     }
 
@@ -115,7 +175,18 @@ function createWindow() {
   });
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  const cfg = sync.getStatus();
+  if (cfg.enabled) {
+    console.log('[sync] Syncing repertoire…');
+    try {
+      await sync.pullSync(DATA_DIR, cfg.pat);
+      console.log('[sync] Sync complete');
+    } catch (err) {
+      console.error('[sync] Startup pull failed:', err.message);
+    }
+  }
+
   startServer(() => createWindow());
 
   app.on('activate', () => {

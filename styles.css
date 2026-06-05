@@ -808,3 +808,37 @@ body {
   text-align: center;
   margin-top: 8px;
 }
+
+/* Sync status indicator */
+.sync-indicator {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  cursor: default;
+}
+.sync-indicator.ok { color: #3a8; }
+.sync-indicator.syncing { color: var(--ink-3); }
+.sync-indicator.error { color: var(--accent); cursor: help; }
+
+/* First-run sync banner */
+.sync-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 16px;
+  background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.sync-banner span { flex: 1; }
+.sync-banner-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--ink-3);
+  font-size: 16px;
+  line-height: 1;
+  padding: 0 4px;
+}
+.sync-banner-close:hover { color: var(--ink); }

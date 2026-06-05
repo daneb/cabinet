@@ -93,5 +93,127 @@ function formatDate(ts) {
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
+function SyncPanel({ syncStatus, onConnected, onDisconnected, onPull }) {
+  const [repoUrl, setRepoUrl] = React.useState('');
+  const [pat, setPat] = React.useState('');
+  const [msg, setMsg] = React.useState(null);
+  const [busy, setBusy] = React.useState(false);
+
+  React.useEffect(() => {
+    if (syncStatus && syncStatus.repoUrl) setRepoUrl(syncStatus.repoUrl);
+  }, [syncStatus && syncStatus.repoUrl]);
+
+  const handleConnect = async () => {
+    if (!repoUrl.trim() || !pat.trim()) return;
+    setBusy(true);
+    setMsg(null);
+    try {
+      const res = await fetch('/api/sync/init', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ repoUrl: repoUrl.trim(), pat: pat.trim() }),
+      });
+      const data = await res.json();
+      if (data.ok) {
+        setMsg({ ok: true, text: 'Connected — first push complete' });
+        setPat('');
+        if (onConnected) onConnected();
+      } else {
+        setMsg({ ok: false, text: data.error || 'Connection failed' });
+      }
+    } catch (e) {
+      setMsg({ ok: false, text: e.message });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleDisconnect = async () => {
+    setBusy(true);
+    try {
+      await fetch('/api/sync/disconnect', { method: 'POST' });
+      setRepoUrl('');
+      setPat('');
+      setMsg(null);
+      if (onDisconnected) onDisconnected();
+    } catch {}
+    setBusy(false);
+  };
+
+  const handlePullClick = () => {
+    if (!confirm('This will overwrite your local repertoire with the version on GitHub. Are you sure?')) return;
+    if (onPull) onPull();
+  };
+
+  const inputStyle = {
+    width: '100%',
+    fontSize: 12,
+    background: 'var(--surface)',
+    color: 'var(--ink)',
+    border: '1px solid var(--ink-4)',
+    borderRadius: 3,
+    padding: '4px 6px',
+    boxSizing: 'border-box',
+  };
+
+  if (syncStatus && syncStatus.enabled) {
+    return (
+      <div>
+        <div style={{ fontSize: 11, color: 'var(--ink-3)', marginBottom: 8, wordBreak: 'break-all' }}>
+          {syncStatus.repoUrl || 'Connected'}
+        </div>
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          <button className="btn btn-ghost" style={{ fontSize: 11 }} onClick={handlePullClick} disabled={busy}>
+            Pull (overwrite local)
+          </button>
+          <button className="btn btn-ghost" style={{ fontSize: 11 }} onClick={handleDisconnect} disabled={busy}>
+            Disconnect
+          </button>
+        </div>
+        {msg && (
+          <div style={{ marginTop: 8, fontSize: 12, color: msg.ok ? '#3a8' : 'var(--accent)' }}>
+            {msg.text}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div style={{ marginBottom: 6 }}>
+        <input
+          type="text"
+          placeholder="https://github.com/user/repo.git"
+          value={repoUrl}
+          onChange={e => setRepoUrl(e.target.value)}
+          style={{ ...inputStyle, marginBottom: 6 }}
+        />
+        <input
+          type="password"
+          placeholder="Personal access token"
+          value={pat}
+          onChange={e => setPat(e.target.value)}
+          style={inputStyle}
+        />
+      </div>
+      <button
+        className="btn btn-primary"
+        style={{ fontSize: 12 }}
+        onClick={handleConnect}
+        disabled={busy || !repoUrl.trim() || !pat.trim()}
+      >
+        {busy ? 'Connecting…' : 'Connect'}
+      </button>
+      {msg && (
+        <div style={{ marginTop: 8, fontSize: 12, color: msg.ok ? '#3a8' : 'var(--accent)' }}>
+          {msg.text}
+        </div>
+      )}
+    </div>
+  );
+}
+
 window.NavControls = NavControls;
 window.SavePanel = SavePanel;
+window.SyncPanel = SyncPanel;
