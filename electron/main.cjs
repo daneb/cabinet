@@ -5,6 +5,8 @@ const http = require('http');
 const fs = require('fs');
 const path = require('path');
 const sync = require('./sync.cjs');
+const { migrate } = require('./migrate.cjs');
+const storage = require('./storage.cjs');
 
 const PORT = 8765;
 
@@ -55,7 +57,7 @@ function startServer(callback) {
     const urlPath = req.url.split('?')[0];
 
     if (req.method === 'GET' && urlPath === '/api/saves') {
-      const data = readJSON(SAVES_FILE) || [];
+      const data = storage.loadAll(DATA_DIR);
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify(data));
       return;
@@ -64,7 +66,10 @@ function startServer(callback) {
     if (req.method === 'POST' && urlPath === '/api/saves') {
       try {
         const data = await readBody(req);
-        writeJSON(SAVES_FILE, data);
+        // data is the full saves array — write each one individually
+        if (Array.isArray(data)) {
+          for (const save of data) storage.saveSave(DATA_DIR, save);
+        }
 
         // Background sync — never block the response
         const cfg = sync.getStatus();
@@ -116,7 +121,8 @@ function startServer(callback) {
           return;
         }
         await sync.pullSync(DATA_DIR, cfg.pat);
-        const saves = readJSON(SAVES_FILE) || [];
+        migrate(DATA_DIR);
+        const saves = storage.loadAll(DATA_DIR);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ ok: true, saves }));
       } catch (err) {
@@ -176,11 +182,14 @@ function createWindow() {
 }
 
 app.whenReady().then(async () => {
+  migrate(DATA_DIR);
+
   const cfg = sync.getStatus();
   if (cfg.enabled) {
     console.log('[sync] Syncing repertoire…');
     try {
       await sync.pullSync(DATA_DIR, cfg.pat);
+      migrate(DATA_DIR);
       console.log('[sync] Sync complete');
     } catch (err) {
       console.error('[sync] Startup pull failed:', err.message);
