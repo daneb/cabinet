@@ -396,7 +396,7 @@ body {
   overflow-y: auto;
   margin: 0 -8px;
   padding: 0 8px;
-  min-height: 280px;
+  min-height: 0;
 }
 .moves-scroll::-webkit-scrollbar { width: 8px; }
 .moves-scroll::-webkit-scrollbar-thumb {
