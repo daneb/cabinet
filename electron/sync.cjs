@@ -36,9 +36,9 @@ function commitMsg() {
 }
 
 async function initSync(dataDir, repoUrl, pat) {
-  if (!fs.existsSync(path.join(dataDir, 'saves.json'))) {
+  if (!fs.existsSync(path.join(dataDir, 'index.json'))) {
     fs.mkdirSync(dataDir, { recursive: true });
-    fs.writeFileSync(path.join(dataDir, 'saves.json'), '[]', 'utf-8');
+    fs.writeFileSync(path.join(dataDir, 'index.json'), '[]', 'utf-8');
   }
 
   const git = _gitFactory(dataDir);
@@ -51,7 +51,7 @@ async function initSync(dataDir, repoUrl, pat) {
     await git.addConfig('user.name', 'Cabinet');
     await git.addConfig('user.email', 'cabinet@localhost');
     await git.addRemote('origin', authUrl(repoUrl, pat));
-    await git.add('saves.json');
+    await git.add(['.']);
     await git.commit('repertoire: initial commit');
     await git.push(['-u', 'origin', 'main']);
   } else {
@@ -93,7 +93,7 @@ async function commitAndPush(dataDir, pat, msg) {
   const message = msg || commitMsg();
 
   try {
-    await git.add('saves.json');
+    await git.add(['.']);
 
     try {
       await git.commit(message);

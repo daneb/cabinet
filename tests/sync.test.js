@@ -169,11 +169,11 @@ describe('pullSync', () => {
 });
 
 describe('commitAndPush', () => {
-  it('stages saves.json, commits, and pushes', async () => {
+  it('stages all data files with git add ., commits, and pushes', async () => {
     const ops = [];
-    const addedFiles = [];
+    const addedArgs = [];
     sync._setGitFactory(() => createMockGit({
-      add: async (file) => { ops.push('add'); addedFiles.push(file); },
+      add: async (arg) => { ops.push('add'); addedArgs.push(arg); },
       commit: async (msg) => { ops.push('commit'); assert.ok(msg.includes('repertoire:')); },
       push: async (remote, branch) => { ops.push('push'); assert.equal(branch, 'main'); },
     }));
@@ -182,7 +182,7 @@ describe('commitAndPush', () => {
     await sync.commitAndPush('/tmp/sync-test', 'tok', 'repertoire: update 2024-01-01T00:00:00Z');
 
     assert.ok(ops.includes('add'));
-    assert.ok(addedFiles.includes('saves.json'));
+    assert.ok(addedArgs.some(a => Array.isArray(a) && a.includes('.')), 'should stage with git add [.]');
     assert.ok(ops.includes('commit'));
     assert.ok(ops.includes('push'));
     assert.ok(mockStoreData.github.lastSync);

@@ -1,6 +1,6 @@
 {
   "name": "repertoire",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "Desktop tool for studying chess opening repertoires from memory.",
   "author": "Dane Balia <dane.balia@gmail.com>",
   "type": "module",
