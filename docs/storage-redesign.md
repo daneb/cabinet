@@ -35,46 +35,46 @@ data/
 ## Checklist
 
 ### Migration (`electron/migrate.cjs`)
-- [ ] M-1 Read existing `data/saves.json`
-- [ ] M-2 Write each save to `data/saves/<id>.json` atomically
-- [ ] M-3 Write `data/index.json` atomically (id, name, updatedAt only)
-- [ ] M-4 Rename `saves.json` → `saves.json.bak` only after all writes succeed
-- [ ] M-5 On any failure: leave saves.json untouched, return error
-- [ ] M-6 Idempotent — safe to run twice
+- [x] M-1 Read existing `data/saves.json`
+- [x] M-2 Write each save to `data/saves/<id>.json` atomically
+- [x] M-3 Write `data/index.json` atomically (id, name, updatedAt only)
+- [x] M-4 Rename `saves.json` → `saves.json.bak` only after all writes succeed
+- [x] M-5 On any failure: leave saves.json untouched, return error
+- [x] M-6 Idempotent — safe to run twice
 
 ### Storage module (`electron/storage.cjs`)
-- [ ] S-1 `loadIndex(dataDir)` — loads index.json
-- [ ] S-2 `loadSave(dataDir, id)` — loads single save file
-- [ ] S-3 `loadAll(dataDir)` — index + all individual saves
-- [ ] S-4 `saveSave(dataDir, save)` — atomic write + index update
-- [ ] S-5 `deleteSave(dataDir, id)` — remove file + index entry
+- [x] S-1 `loadIndex(dataDir)` — loads index.json
+- [x] S-2 `loadSave(dataDir, id)` — loads single save file
+- [x] S-3 `loadAll(dataDir)` — index + all individual saves
+- [x] S-4 `saveSave(dataDir, save)` — atomic write + index update
+- [x] S-5 `deleteSave(dataDir, id)` — remove file + index entry
 
 ### HTTP server (`electron/main.cjs`)
-- [ ] H-1 Run migration on startup
-- [ ] H-2 `GET /api/saves` uses `loadAll()`
-- [ ] H-3 `POST /api/saves` uses `saveSave()` per item
+- [x] H-1 Run migration on startup
+- [x] H-2 `GET /api/saves` uses `loadAll()`
+- [x] H-3 `POST /api/saves` uses `saveSave()` per item
 
 ### Tests (`tests/storage.test.js`)
-- [ ] T-1 Migration: correct output files produced
-- [ ] T-2 Migration idempotency
-- [ ] T-3 loadIndex returns metadata only
-- [ ] T-4 saveSave atomic write + index update
-- [ ] T-5 deleteSave removes file and index entry
-- [ ] T-6 Round-trip: save then load returns identical data
+- [x] T-1 Migration: correct output files produced
+- [x] T-2 Migration idempotency
+- [x] T-3 loadIndex returns metadata only
+- [x] T-4 saveSave atomic write + index update
+- [x] T-5 deleteSave removes file and index entry
+- [x] T-6 Round-trip: save then load returns identical data
 
 ### Release
-- [ ] R-1 `npm test` all green
-- [ ] R-2 Bump version to 1.0.8
-- [ ] R-3 Commit, tag v1.0.8, push
-- [ ] R-4 GitHub release created, DMG built by workflow
+- [x] R-1 `npm test` all green (126/126)
+- [x] R-2 Bump version to 1.0.8
+- [x] R-3 Commit, tag v1.0.8, push
+- [x] R-4 GitHub release created, DMG built by workflow
 
 ## Progress
 
 | Area | Items | Done | Status |
 |---|---|---|---|
-| Migration | 6 | 0 | Not started |
-| Storage module | 5 | 0 | Not started |
-| HTTP server | 3 | 0 | Not started |
-| Tests | 6 | 0 | Not started |
-| Release | 4 | 0 | Not started |
-| **Total** | **24** | **0** | — |
+| Migration | 6 | 6 | Complete |
+| Storage module | 5 | 5 | Complete |
+| HTTP server | 3 | 3 | Complete |
+| Tests | 6 | 6 | Complete |
+| Release | 4 | 4 | Complete |
+| **Total** | **24** | **24** | **Done** |
