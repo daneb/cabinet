@@ -51,9 +51,23 @@ async function initSync(dataDir, repoUrl, pat) {
     await git.addConfig('user.name', 'Cabinet');
     await git.addConfig('user.email', 'cabinet@localhost');
     await git.addRemote('origin', authUrl(repoUrl, pat));
-    await git.add(['.']);
-    await git.commit('repertoire: initial commit');
-    await git.push(['-u', 'origin', 'main']);
+
+    // If the remote already has a main branch (another device already synced),
+    // fetch and reset to it instead of pushing a conflicting initial commit.
+    let remoteHasMain = false;
+    try {
+      await git.fetch('origin');
+      const refs = await git.raw(['ls-remote', '--heads', 'origin', 'main']);
+      remoteHasMain = refs.trim().length > 0;
+    } catch {}
+
+    if (remoteHasMain) {
+      await git.reset(['--hard', 'origin/main']);
+    } else {
+      await git.add(['.']);
+      await git.commit('repertoire: initial commit');
+      await git.push(['-u', 'origin', 'main']);
+    }
   } else {
     const remotes = await git.getRemotes(true);
     const origin = remotes.find(r => r.name === 'origin');
