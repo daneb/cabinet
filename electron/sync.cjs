@@ -53,16 +53,17 @@ async function initSync(dataDir, repoUrl, pat) {
     await git.addRemote('origin', authUrl(repoUrl, pat));
 
     // If the remote already has a main branch (another device already synced),
-    // fetch and reset to it instead of pushing a conflicting initial commit.
-    let remoteHasMain = false;
+    // fetch and reset to FETCH_HEAD instead of pushing a conflicting initial commit.
+    // FETCH_HEAD is always written by git fetch — avoids relying on tracking refs
+    // which may not exist in a fresh or broken-partial repo.
+    let fetched = false;
     try {
       await git.fetch('origin');
-      const refs = await git.raw(['ls-remote', '--heads', 'origin', 'main']);
-      remoteHasMain = refs.trim().length > 0;
+      fetched = true;
     } catch {}
 
-    if (remoteHasMain) {
-      await git.reset(['--hard', 'origin/main']);
+    if (fetched) {
+      await git.reset(['--hard', 'FETCH_HEAD']);
     } else {
       await git.add(['.']);
       await git.commit('repertoire: initial commit');
@@ -96,12 +97,10 @@ async function pullSync(dataDir, pat) {
   const git = _gitFactory(dataDir);
   await git.fetch('origin');
 
-  // origin/main may not exist if this is a broken partial init or the remote
-  // branch was never pushed. Skip the reset rather than throwing.
-  const refs = await git.raw(['ls-remote', '--heads', 'origin', 'main']).catch(() => '');
-  if (!refs.trim()) return;
-
-  await git.reset(['--hard', 'origin/main']);
+  // Use FETCH_HEAD rather than origin/main — FETCH_HEAD is always written by
+  // git fetch regardless of whether local tracking refs have been established,
+  // which avoids "ambiguous argument 'origin/main'" on broken partial inits.
+  await git.reset(['--hard', 'FETCH_HEAD']);
 
   const store = getStore();
   const existing = store.get('github', {});
@@ -127,7 +126,7 @@ async function commitAndPush(dataDir, pat, msg) {
     } catch {
       // Non-fast-forward: fetch, reset to remote, re-add local file, re-commit, force-push
       await git.fetch('origin');
-      await git.reset(['--hard', 'origin/main']);
+      await git.reset(['--hard', 'FETCH_HEAD']);
       await git.add('saves.json');
       try { await git.commit(message); } catch (e2) {
         if (!e2.message || !e2.message.includes('nothing to commit')) throw e2;
