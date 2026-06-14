@@ -75,57 +75,72 @@ fi
 
 PREV_TAG="$(git describe --tags --abbrev=0 HEAD 2>/dev/null || echo "")"
 
+# Extract a named section (## Heading) from a markdown file.
+extract_section() {
+  local file="$1" heading="$2"
+  awk "/^## ${heading}/{found=1; next} found && /^## /{exit} found{print}" "$file"
+}
+
 generate_notes() {
   local prev="$1" new_ver="$2"
-  local range
-  if [[ -n "$prev" ]]; then
-    range="${prev}..HEAD"
-  else
-    range="HEAD"
-  fi
-
-  local fixes feats docs chores others
-  fixes="$(git log "$range" --oneline --no-merges | grep -E '^[a-f0-9]+ fix(\(.+\))?:' || true)"
-  feats="$(git log "$range" --oneline --no-merges | grep -E '^[a-f0-9]+ feat(\(.+\))?:' || true)"
-  docs="$(git log "$range" --oneline --no-merges | grep -E '^[a-f0-9]+ docs(\(.+\))?:' || true)"
-  chores="$(git log "$range" --oneline --no-merges | grep -E '^[a-f0-9]+ chore(\(.+\))?:' || true)"
-  others="$(git log "$range" --oneline --no-merges | grep -vE '^[a-f0-9]+ (fix|feat|docs|chore|refactor|test|style|perf|ci)(\(.+\))?:' || true)"
-  refactors="$(git log "$range" --oneline --no-merges | grep -E '^[a-f0-9]+ refactor(\(.+\))?:' || true)"
-
-  fmt_section() {
-    local title="$1" entries="$2"
-    if [[ -n "$entries" ]]; then
-      echo "### $title"
-      echo "$entries" | while IFS= read -r line; do
-        # Strip the short hash prefix
-        msg="${line#* }"
-        # Strip conventional commit prefix (fix: / feat(x): etc)
-        msg="$(echo "$msg" | sed 's/^[a-z]*([^)]*): //' | sed 's/^[a-z]*: //')"
-        echo "- $msg"
-      done
-      echo ""
-    fi
-  }
-
-  local notes=""
-  notes+="$(fmt_section "What's new" "$feats")"
-  notes+="$(fmt_section "Bug fixes" "$fixes")"
-  notes+="$(fmt_section "Improvements" "$refactors")"
-  notes+="$(fmt_section "Documentation" "$docs")"
-  notes+="$(fmt_section "Other changes" "$others$chores")"
-
-  if [[ -z "${notes// }" ]]; then
-    notes="No changes recorded since ${prev:-the beginning}."
-  fi
-
-  local repo_url
+  local range repo_url
+  range="${prev:+${prev}..}HEAD"
   repo_url="$(gh repo view --json url -q .url 2>/dev/null || echo "")"
 
   echo "## Cabinet ${new_ver}"
   echo ""
-  echo "$notes"
 
-  # Screenshot from assets/ referenced via raw GitHub URL
+  # ── ADR sections (primary source) ─────────────────────────────────────────
+  # Find ADR files added or modified since the previous tag.
+  local adr_files
+  if [[ -n "$prev" ]]; then
+    adr_files="$(git diff --name-only "${prev}..HEAD" -- 'docs/adrs/[0-9]*.md' 2>/dev/null || true)"
+  else
+    adr_files="$(git ls-files 'docs/adrs/[0-9]*.md' 2>/dev/null || true)"
+  fi
+
+  if [[ -n "$adr_files" ]]; then
+    echo "### Changes"
+    echo ""
+    while IFS= read -r adr; do
+      [[ -f "$adr" ]] || continue
+      # Pull the ADR title from the first # heading
+      local title
+      title="$(grep -m1 '^# ' "$adr" | sed 's/^# //' | sed 's/^ADR-[0-9]*: //')"
+
+      local context decision
+      context="$(extract_section "$adr" "Context" | sed '/^$/d' | head -5)"
+      decision="$(extract_section "$adr" "Decision" | sed '/^$/d' | head -5)"
+
+      echo "#### ${title}"
+      if [[ -n "$context" ]]; then
+        echo ""
+        echo "$context"
+      fi
+      if [[ -n "$decision" ]]; then
+        echo ""
+        echo "$decision"
+      fi
+      echo ""
+    done <<< "$adr_files"
+  fi
+
+  # ── Commit-based fallback for fixes not covered by an ADR ─────────────────
+  local fixes
+  fixes="$(git log "$range" --oneline --no-merges | grep -E '^[a-f0-9]+ fix(\(.+\))?:' || true)"
+
+  if [[ -n "$fixes" ]]; then
+    echo "### Bug fixes"
+    echo ""
+    while IFS= read -r line; do
+      local msg="${line#* }"
+      msg="$(echo "$msg" | sed 's/^[a-z]*([^)]*): //' | sed 's/^[a-z]*: //')"
+      echo "- $msg"
+    done <<< "$fixes"
+    echo ""
+  fi
+
+  # ── Screenshot ─────────────────────────────────────────────────────────────
   if [[ -f "assets/screenshot.png" && -n "$repo_url" ]]; then
     local raw_url="${repo_url/github.com/raw.githubusercontent.com}/master/assets/screenshot.png"
     echo "---"
@@ -134,6 +149,7 @@ generate_notes() {
     echo ""
   fi
 
+  # ── Full changelog link ────────────────────────────────────────────────────
   if [[ -n "$prev" && -n "$repo_url" ]]; then
     echo "**Full changelog**: ${repo_url}/compare/${prev}...${TAG}"
   fi
