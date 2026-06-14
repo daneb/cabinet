@@ -182,6 +182,13 @@ function createWindow() {
 }
 
 app.whenReady().then(async () => {
+  console.log('[cabinet] version', app.getVersion());
+  app.setAboutPanelOptions({
+    applicationName: 'Cabinet',
+    applicationVersion: app.getVersion(),
+    version: app.getVersion(),
+    copyright: `Copyright © ${new Date().getFullYear()} Dane Balia`,
+  });
   migrate(DATA_DIR);
 
   const cfg = sync.getStatus();
