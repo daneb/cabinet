@@ -68,7 +68,7 @@ info "Bumping $CURRENT → $NEW_VERSION (tag: $TAG)"
 # Confirm if not piped
 if [[ -t 0 ]]; then
   read -rp "Continue? [y/N] " confirm
-  [[ "${confirm,,}" == "y" ]] || { echo "Aborted."; exit 0; }
+  [[ "$(echo "$confirm" | tr '[:upper:]' '[:lower:]')" == "y" ]] || { echo "Aborted."; exit 0; }
 fi
 
 # ── generate release notes ────────────────────────────────────────────────────
