@@ -11,11 +11,12 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Create draft release
-        run: gh release create ${{ github.ref_name }} --draft --title "${{ github.ref_name }}" --notes ""
+      - name: Create draft release (if not already created by release script)
+        run: |
+          gh release view ${{ github.ref_name }} --repo ${{ github.repository }} &>/dev/null \
+            || gh release create ${{ github.ref_name }} --draft --title "${{ github.ref_name }}" --notes "" --repo ${{ github.repository }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_REPO: ${{ github.repository }}
 
   build:
     needs: create-release
