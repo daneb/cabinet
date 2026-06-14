@@ -53,10 +53,30 @@ npm run package    # builds bundle, then runs electron-builder
 
 ### Releases
 
-Push a `v*.*.*` tag and the [GitHub Action](.github/workflows/release.yml) will build and publish the DMG automatically.
+Use the release script — it handles the version bump, tag, and GitHub release creation in one step:
 
 ```bash
-git tag v1.0.0 && git push origin v1.0.0
+./scripts/release.sh          # patch bump  (1.0.x → 1.0.x+1)
+./scripts/release.sh minor    # minor bump  (1.x.0 → 1.x+1.0)
+./scripts/release.sh major    # major bump  (x.0.0 → x+1.0.0)
+./scripts/release.sh 2.1.0    # explicit version
+```
+
+The script will:
+1. Check your working tree is clean and `gh` has repo permissions.
+2. Ask for confirmation, then bump `package.json`, commit, tag, and push.
+3. Generate release notes from any ADR files changed since the last tag, with `fix:` commits as a fallback.
+4. Create a draft GitHub release with those notes.
+5. Trigger the [CI workflow](.github/workflows/release.yml) which builds the DMG and Linux packages, attaches them, and publishes the release.
+
+**Before releasing**, write an ADR in `docs/adrs/` for any feature or non-obvious fix — the script pulls `## Context` and `## Decision` from each changed ADR to produce user-facing release notes. See `CLAUDE.md` for the full convention.
+
+**Prerequisites**: `gh auth login` with `repo` scope. If your token lacks it, run `gh auth refresh -s repo`.
+
+**Recovering from a failed release creation** (e.g. after fixing token permissions when the tag is already pushed):
+
+```bash
+./scripts/release.sh --create-release v1.0.13
 ```
 
 ---
