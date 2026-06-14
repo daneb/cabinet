@@ -95,6 +95,12 @@ async function initSync(dataDir, repoUrl, pat) {
 async function pullSync(dataDir, pat) {
   const git = _gitFactory(dataDir);
   await git.fetch('origin');
+
+  // origin/main may not exist if this is a broken partial init or the remote
+  // branch was never pushed. Skip the reset rather than throwing.
+  const refs = await git.raw(['ls-remote', '--heads', 'origin', 'main']).catch(() => '');
+  if (!refs.trim()) return;
+
   await git.reset(['--hard', 'origin/main']);
 
   const store = getStore();
