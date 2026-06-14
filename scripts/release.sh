@@ -28,8 +28,8 @@ cd "$REPO_ROOT"
 BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 [[ "$BRANCH" == "master" ]] || die "must be on master (currently on '$BRANCH')"
 
-# Working tree must be clean
-[[ -z "$(git status --porcelain)" ]] || die "working tree is not clean — commit or stash first"
+# Working tree must be clean (untracked files are ignored)
+[[ -z "$(git status --porcelain | grep -v '^??')" ]] || die "working tree is not clean — commit or stash first"
 
 # Must be in sync with remote
 git fetch origin master --quiet
