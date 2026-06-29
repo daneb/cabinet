@@ -5,7 +5,8 @@
       "name": "chess-app",
       "runtimeExecutable": "node",
       "runtimeArgs": ["serve.js"],
-      "port": 8765
+      "port": 8766,
+      "autoPort": true
     }
   ]
 }
