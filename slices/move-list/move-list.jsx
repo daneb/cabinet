@@ -44,6 +44,7 @@ function buildMoveModel(tree, currentNodeId) {
       nodeId: node.id,
       san: node.san,
       status: node.status,
+      classification: node.reviewClass || null,
       isWhite: isWhiteMove(node),
       moveNum: moveNumOf(node),
       isCurrent: node.id === currentNodeId,
@@ -151,6 +152,19 @@ function StatusBadge({ status }) {
   return null;
 }
 
+const CLASS_BADGE = {
+  inaccuracy: { glyph: '?!', cls: 'inaccuracy', title: 'Inaccuracy' },
+  mistake: { glyph: '?', cls: 'mistake', title: 'Mistake' },
+  blunder: { glyph: '??', cls: 'blunder', title: 'Blunder' },
+};
+
+function ClassBadge({ classification }) {
+  if (!classification) return null;
+  const entry = CLASS_BADGE[classification];
+  if (!entry) return null;
+  return <span className={`mv-class ${entry.cls}`} title={entry.title}>{entry.glyph}</span>;
+}
+
 function Markers({ markers, onMarkerClick }) {
   if (!markers || markers.length === 0) return null;
   return (
@@ -180,6 +194,7 @@ function MoveToken({ cell, onSelect, onContextMenu, onMarkerClick }) {
       }}
     >
       {cell.san}
+      <ClassBadge classification={cell.classification} />
       <StatusBadge status={cell.status} />
       <Markers markers={cell.markers} onMarkerClick={onMarkerClick} />
     </span>

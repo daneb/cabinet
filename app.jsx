@@ -10,6 +10,9 @@ import './slices/move-list/move-list.jsx';
 import './slices/panel/panel.jsx';
 import './slices/pgn/pgn.js';
 import './slices/drill/drill.jsx';
+import './slices/game-review/classify.js';
+import './slices/game-review/analyzer.js';
+import './slices/game-review/game-review.jsx';
 
 const { useState, useEffect, useCallback, useMemo, useRef } = React;
 
@@ -693,6 +696,8 @@ function App() {
               currentName={activeName}
             />
           </div>
+
+          <window.GameReviewPanel tree={tree} setTree={setTree} />
 
           <ChapterPanel tree={tree} onSelectChapter={(nodeId) => goToNode(nodeId)} onDrillChapter={(nodeId) => startDrill(nodeId, 'w', 'any')} />
 

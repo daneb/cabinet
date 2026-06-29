@@ -244,6 +244,34 @@ function applyDecay(tree) {
   return changed ? { ...tree, nodes: newNodes } : tree;
 }
 
+// ---- Game-review annotations ----
+
+function setReviewAnnotations(tree, annotationsMap) {
+  const newNodes = { ...tree.nodes };
+  for (const id of Object.keys(annotationsMap)) {
+    const node = newNodes[id];
+    if (!node) continue;
+    newNodes[id] = { ...node, ...annotationsMap[id] };
+  }
+  return { ...tree, nodes: newNodes };
+}
+
+function clearReviewAnnotations(tree) {
+  let changed = false;
+  const newNodes = {};
+  for (const id of Object.keys(tree.nodes)) {
+    const node = tree.nodes[id];
+    if (node.reviewLossCp != null || node.reviewClass != null || node.reviewAccuracy != null) {
+      const { reviewLossCp, reviewClass, reviewAccuracy, ...rest } = node;
+      newNodes[id] = rest;
+      changed = true;
+    } else {
+      newNodes[id] = node;
+    }
+  }
+  return changed ? { ...tree, nodes: newNodes } : tree;
+}
+
 // Chapter / section stats for tagged nodes.
 function chapterStats(tree) {
   const chapters = {};
@@ -394,6 +422,7 @@ function validateMigration(oldSaves, newSaves) {
 const MoveTree = {
   createTree, playMove, promoteToMainline, deleteSubtree,
   setComment, setNag, markStatus,
+  setReviewAnnotations, clearReviewAnnotations,
   visitNode, recordDrillResult, applyDecay, chapterStats,
   walkMainline, pathToRoot,
   fenKey, buildFenIndex, nodeCount, mainlineDepth,
