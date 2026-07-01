@@ -3,13 +3,14 @@
 // Inputs: a sequence of per-position engine evaluations expressed in centipawns
 // from White's perspective. Mate scores are clamped to ±MATE_CP for math.
 //
-// For each ply, the centipawn loss attributed to the player who moved is
-//   loss = (turn === 'w' ? 1 : -1) * (evalBefore - evalAfter)
-// clamped to >= 0 (a "better than the engine" move just gets loss 0).
+// **Classification is by win-percentage loss, not raw centipawn loss.** A
+// 150cp drop in an equal position is a real mistake (the win% craters from
+// ~62% to ~45%), but the same 150cp drop in a +5 winning position is noise
+// (~95% → ~93%). Lichess uses win% delta for exactly this reason.
 //
-// Accuracy follows the Lichess formula:
 //   winPct(cp) = 50 + 50 * (2 / (1 + exp(-0.00368208 * cp)) - 1)
 //   accuracy(loss%) = 103.1668 * exp(-0.04354 * loss%) - 3.1669   (clamped 0..100)
+//
 // Per-game accuracy is the mean of per-move accuracy values for that side
 // (Lichess uses a weighted/harmonic blend; mean is a close-enough v1).
 
@@ -46,16 +47,28 @@ function computeLossCp(evalBeforeCp, evalAfterCp, turn) {
   return loss < 0 ? 0 : loss;
 }
 
-// Lichess-style classification by centipawn loss.
-// A "best" move is loss <= 10cp (close enough to engine's top choice).
-function classifyByLoss(lossCp, opts = {}) {
-  if (lossCp == null) return null;
+// Win-percentage loss for a move, from the moving player's perspective.
+// Returns a 0..100 value (NOT 0..1). Negative values (player "improved" beyond
+// the engine) clamp to 0.
+function computeWinPctLoss(evalBeforeCp, evalAfterCp, turn) {
+  if (evalBeforeCp == null || evalAfterCp == null) return null;
+  const wBefore = cpToWinPct(evalBeforeCp);
+  const wAfter = cpToWinPct(evalAfterCp);
+  const sign = turn === 'w' ? 1 : -1;
+  const loss = sign * (wBefore - wAfter);
+  return loss < 0 ? 0 : loss;
+}
+
+// Lichess-style classification by win-percentage loss. Mirrors Lichess thresholds
+// (0.10 / 0.20 / 0.30 of winning chance, scaled to a 0–100 percentage).
+function classifyByWinPctLoss(winPctLoss, opts = {}) {
+  if (winPctLoss == null) return null;
   if (opts.wasBestMove) return 'best';
-  if (lossCp <= 10) return 'best';
-  if (lossCp < 30) return 'excellent';
-  if (lossCp < 60) return 'good';
-  if (lossCp < 100) return 'inaccuracy';
-  if (lossCp < 200) return 'mistake';
+  if (winPctLoss < 1) return 'best';
+  if (winPctLoss < 3) return 'excellent';
+  if (winPctLoss < 10) return 'good';
+  if (winPctLoss < 20) return 'inaccuracy';
+  if (winPctLoss < 30) return 'mistake';
   return 'blunder';
 }
 
@@ -75,14 +88,9 @@ function winPctLossToAccuracy(winPctLoss) {
 
 // Per-move accuracy% given before/after eval cps and which side moved.
 function moveAccuracy(evalBeforeCp, evalAfterCp, turn) {
-  if (evalBeforeCp == null || evalAfterCp == null) return null;
-  const wBefore = cpToWinPct(evalBeforeCp);
-  const wAfter = cpToWinPct(evalAfterCp);
-  // Win pct from the moving player's view.
-  const sign = turn === 'w' ? 1 : -1;
-  const lossPct = sign * (wBefore - wAfter);
-  const clamped = lossPct < 0 ? 0 : lossPct;
-  return winPctLossToAccuracy(clamped);
+  const loss = computeWinPctLoss(evalBeforeCp, evalAfterCp, turn);
+  if (loss == null) return null;
+  return winPctLossToAccuracy(loss);
 }
 
 // Aggregate per-side accuracy + classification counts.
@@ -120,7 +128,8 @@ const Classify = {
   MATE_CP,
   evalToCp,
   computeLossCp,
-  classifyByLoss,
+  computeWinPctLoss,
+  classifyByWinPctLoss,
   cpToWinPct,
   moveAccuracy,
   summarize,

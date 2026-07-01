@@ -75,7 +75,8 @@ function GameReviewPanel({ tree, setTree }) {
       const evalAfterCp = window.GameReviewClassify.evalToCp(results[i].score);
       const turn = parent.state.turn;
       const lossCp = window.GameReviewClassify.computeLossCp(evalBeforeCp, evalAfterCp, turn);
-      const classification = window.GameReviewClassify.classifyByLoss(lossCp);
+      const winPctLoss = window.GameReviewClassify.computeWinPctLoss(evalBeforeCp, evalAfterCp, turn);
+      const classification = window.GameReviewClassify.classifyByWinPctLoss(winPctLoss);
       const accuracy = window.GameReviewClassify.moveAccuracy(evalBeforeCp, evalAfterCp, turn);
       annotations[node.id] = {
         reviewLossCp: lossCp,
