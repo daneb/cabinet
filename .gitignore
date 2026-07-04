@@ -47,3 +47,4 @@ yarn.lock
 # Disk-backed persistence store.
 # Remove this line to commit saves.json as a backup.
 data/saves.json
+data/library.json

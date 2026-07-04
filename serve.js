@@ -8,6 +8,7 @@ const PORT = process.env.PORT || 8765;
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = path.join(ROOT, 'data');
 const SAVES_FILE = path.join(DATA_DIR, 'saves.json');
+const LIBRARY_FILE = path.join(DATA_DIR, 'library.json');
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -15,6 +16,7 @@ const MIME = {
   '.js': 'application/javascript',
   '.jsx': 'application/javascript',
   '.json': 'application/json',
+  '.wasm': 'application/wasm',
   '.png': 'image/png',
   '.ico': 'image/x-icon',
 };
@@ -63,6 +65,26 @@ http.createServer(async (req, res) => {
     try {
       const data = await readBody(req);
       writeJSON(SAVES_FILE, data);
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ ok: true }));
+    } catch {
+      res.writeHead(400);
+      res.end(JSON.stringify({ ok: false, error: 'Invalid JSON' }));
+    }
+    return;
+  }
+
+  if (req.method === 'GET' && urlPath === '/api/library') {
+    const data = readJSON(LIBRARY_FILE) || [];
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(data));
+    return;
+  }
+
+  if (req.method === 'POST' && urlPath === '/api/library') {
+    try {
+      const data = await readBody(req);
+      writeJSON(LIBRARY_FILE, data);
       res.writeHead(200, { 'Content-Type': 'application/json' });
       res.end(JSON.stringify({ ok: true }));
     } catch {

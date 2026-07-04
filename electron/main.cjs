@@ -15,6 +15,7 @@ const PORT = 8765;
 const APP_ROOT = path.join(__dirname, '..');
 const DATA_DIR = path.join(app.getPath('userData'), 'data');
 const SAVES_FILE = path.join(DATA_DIR, 'saves.json');
+const LIBRARY_FILE = path.join(DATA_DIR, 'library.json');
 
 const MIME = {
   '.html': 'text/html; charset=utf-8',
@@ -78,6 +79,26 @@ function startServer(callback) {
             .catch(err => console.error('[sync] commitAndPush failed:', err.message));
         }
 
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ ok: true }));
+      } catch {
+        res.writeHead(400);
+        res.end(JSON.stringify({ ok: false, error: 'Invalid JSON' }));
+      }
+      return;
+    }
+
+    if (req.method === 'GET' && urlPath === '/api/library') {
+      const data = readJSON(LIBRARY_FILE) || [];
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(data));
+      return;
+    }
+
+    if (req.method === 'POST' && urlPath === '/api/library') {
+      try {
+        const data = await readBody(req);
+        writeJSON(LIBRARY_FILE, data);
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ ok: true }));
       } catch {

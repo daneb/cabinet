@@ -5,14 +5,24 @@ import './slices/move-tree/move-tree.js';
 import './slices/board/board.jsx';
 import './slices/drag/drag.jsx';
 import './slices/eval-bar/eval-bar.jsx';
+import './slices/engine/engine-config.js';
 import './slices/engine/engine.jsx';
 import './slices/move-list/move-list.jsx';
 import './slices/panel/panel.jsx';
 import './slices/pgn/pgn.js';
 import './slices/drill/drill.jsx';
 import './slices/game-review/classify.js';
+import './slices/game-review/budgets.js';
 import './slices/game-review/analyzer.js';
+import './slices/game-review/features.js';
+import './slices/game-review/batch.js';
 import './slices/game-review/game-review.jsx';
+import './slices/library/library.js';
+import './slices/library/library.jsx';
+import './slices/game-review/elo.js';
+import './slices/insights/insights.js';
+import './slices/insights/coach.js';
+import './slices/insights/insights.jsx';
 
 const { useState, useEffect, useCallback, useMemo, useRef } = React;
 
@@ -83,6 +93,55 @@ function App() {
     if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
     toastTimerRef.current = setTimeout(() => setToast(null), 1800);
   }, []);
+
+  // ---- Game library + review worker (shared by Game Review and Library) ----
+
+  const [library, setLibrary] = useState([]);
+  const [reviewSettings, setReviewSettings] = useState(() => window.GameLibrary.loadSettings());
+  const libraryLoadedRef = useRef(false);
+  const reviewWorker = window.useReviewWorker();
+  const batchReview = window.useBatchReview(reviewWorker, setLibrary);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const disk = await window.GameLibrary.loadLibraryFromDisk();
+      if (cancelled) return;
+      if (disk && disk.length) {
+        setLibrary(disk);
+      } else {
+        const local = window.GameLibrary.loadLibraryLocal();
+        if (local.length) {
+          setLibrary(local);
+          window.GameLibrary.persistLibraryToDisk(local);
+        }
+      }
+      libraryLoadedRef.current = true;
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    if (!libraryLoadedRef.current) return;
+    window.GameLibrary.persistLibraryLocal(library);
+    window.GameLibrary.persistLibraryToDisk(library);
+  }, [library]);
+
+  useEffect(() => {
+    window.GameLibrary.persistSettings(reviewSettings);
+  }, [reviewSettings]);
+
+  const handleOpenLibraryGame = useCallback((newTree, name) => {
+    if (dirty && !confirm('Discard current line?')) return;
+    setTree(newTree);
+    setCurrentNodeId(newTree.rootId);
+    setActiveId(null);
+    setActiveName(name || '');
+    setSelected(null);
+    setLegalTargets([]);
+    setDirty(false);
+    showToast('Opened from library');
+  }, [dirty, showToast]);
 
   // ---- Sync status polling ----
 
@@ -697,7 +756,25 @@ function App() {
             />
           </div>
 
-          <window.GameReviewPanel tree={tree} setTree={setTree} />
+          <window.GameReviewPanel tree={tree} setTree={setTree} reviewWorker={reviewWorker} />
+
+          <window.LibraryPanel
+            library={library}
+            setLibrary={setLibrary}
+            settings={reviewSettings}
+            setSettings={setReviewSettings}
+            reviewWorker={reviewWorker}
+            batchReview={batchReview}
+            currentTree={tree}
+            onOpenGame={handleOpenLibraryGame}
+            showToast={showToast}
+          />
+
+          <window.InsightsPanel
+            library={library}
+            settings={reviewSettings}
+            reviewWorker={reviewWorker}
+          />
 
           <ChapterPanel tree={tree} onSelectChapter={(nodeId) => goToNode(nodeId)} onDrillChapter={(nodeId) => startDrill(nodeId, 'w', 'any')} />
 

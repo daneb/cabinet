@@ -3,8 +3,6 @@
 
 const { useState, useMemo, useCallback } = React;
 
-const DEPTH = 14;
-
 const CLASS_ROWS = [
   { key: 'best', label: 'Best', color: '#3a8' },
   { key: 'excellent', label: 'Excellent', color: '#7bb' },
@@ -38,9 +36,13 @@ function buildMovesFromTree(tree) {
   return out;
 }
 
-function GameReviewPanel({ tree, setTree }) {
-  const { ready, status, progress, analyzePositions, cancel } = window.useReviewWorker();
+// `reviewWorker` is the shared useReviewWorker() instance owned by App — the
+// Library panel's batch queue drives the same worker, so both UIs disable
+// while either is analyzing.
+function GameReviewPanel({ tree, setTree, reviewWorker }) {
+  const { ready, engineId, status, progress, analyzePositions, cancel } = reviewWorker;
   const [error, setError] = useState(null);
+  const [tier, setTier] = useState(window.ReviewBudgets.DEFAULT_TIER);
 
   const moves = useMemo(() => buildMovesFromTree(tree), [tree]);
   const summary = useMemo(() => window.GameReviewClassify.summarize(moves), [moves]);
@@ -62,7 +64,8 @@ function GameReviewPanel({ tree, setTree }) {
       return;
     }
     const fens = mainline.map(n => window.Chess.stateToFEN(n.state));
-    const results = await analyzePositions(fens, { depth: DEPTH });
+    const nodes = window.ReviewBudgets.QUALITY_TIERS[tier].nodes;
+    const results = await analyzePositions(fens, { nodes });
     if (results.length < fens.length) {
       // Cancelled — leave existing annotations untouched.
       return;
@@ -84,11 +87,17 @@ function GameReviewPanel({ tree, setTree }) {
         reviewAccuracy: accuracy,
       };
     }
-    setTree(t => window.MoveTree.setReviewAnnotations(t, annotations));
-  }, [tree, ready, analyzePositions, setTree]);
+    setTree(t => ({
+      ...window.MoveTree.setReviewAnnotations(t, annotations),
+      reviewMeta: { engineId, nodesPerPos: nodes, reviewedAt: Date.now() },
+    }));
+  }, [tree, ready, engineId, tier, analyzePositions, setTree]);
 
   const handleClear = useCallback(() => {
-    setTree(t => window.MoveTree.clearReviewAnnotations(t));
+    setTree(t => {
+      const { reviewMeta, ...rest } = window.MoveTree.clearReviewAnnotations(t);
+      return rest;
+    });
     setError(null);
   }, [setTree]);
 
@@ -130,6 +139,17 @@ function GameReviewPanel({ tree, setTree }) {
             {hasAnalysis ? (
               <button className="btn btn-ghost" onClick={handleClear}>Clear</button>
             ) : null}
+            <select
+              className="gr-tier-select"
+              value={tier}
+              onChange={e => setTier(e.target.value)}
+              disabled={isRunning}
+              title={window.ReviewBudgets.QUALITY_TIERS[tier].hint}
+            >
+              {Object.entries(window.ReviewBudgets.QUALITY_TIERS).map(([key, t]) => (
+                <option key={key} value={key}>{t.label}</option>
+              ))}
+            </select>
           </div>
         )}
 
@@ -156,7 +176,11 @@ function GameReviewPanel({ tree, setTree }) {
                 </div>
               ))}
             </div>
-            <div className="gr-footnote">Depth {DEPTH} · Lichess-style win-pct accuracy</div>
+            <div className="gr-footnote">
+              {tree.reviewMeta
+                ? `${tree.reviewMeta.engineId} · ${Math.round(tree.reviewMeta.nodesPerPos / 1000)}k nodes/move · win-pct accuracy`
+                : 'Lichess-style win-pct accuracy'}
+            </div>
           </>
         ) : (
           !isRunning ? (

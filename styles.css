@@ -918,3 +918,74 @@ body {
   padding: 0 4px;
 }
 .sync-banner-close:hover { color: var(--ink); }
+
+/* Game library */
+.library { display: flex; flex-direction: column; gap: 10px; }
+.lib-settings input,
+.lib-paste textarea {
+  width: 100%;
+  font-family: var(--sans);
+  font-size: 12px;
+  padding: 7px 9px;
+  border-radius: 4px;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  box-sizing: border-box;
+}
+.lib-controls { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.lib-controls .btn { font-size: 12px; padding: 4px 10px; }
+.lib-controls select,
+.gr-controls select {
+  font-family: var(--sans);
+  font-size: 12px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  border: 1px solid var(--rule);
+  background: var(--paper);
+}
+.lib-paste { display: flex; flex-direction: column; gap: 6px; }
+.lib-list { max-height: 260px; overflow-y: auto; }
+.lib-list .save-item {
+  grid-template-columns: auto 1fr auto;
+  cursor: default;
+}
+.lib-list .save-item:hover { transform: none; }
+.lib-side-btn { font-family: var(--mono); min-width: 22px; }
+
+/* Insights */
+.insights { display: flex; flex-direction: column; gap: 10px; }
+.insights .gr-table { grid-template-columns: 1fr 56px 48px 36px; margin-top: 0; }
+.ins-n { color: var(--ink-3); }
+.ins-low > div, .ins-finding.ins-low { opacity: 0.45; }
+.ins-elo {
+  font-family: var(--serif);
+  font-size: 13px;
+  padding: 8px 10px;
+  background: var(--paper);
+  border: 1px solid var(--rule-soft);
+  border-radius: 4px;
+}
+.ins-elo-note { font-size: 11px; color: var(--ink-3); }
+.ins-findings { display: flex; flex-direction: column; gap: 4px; }
+.ins-finding { font-family: var(--sans); font-size: 12px; color: var(--ink-2); }
+.ins-lines {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-2);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.ins-opening { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ins-excluded { font-family: var(--sans); font-size: 10px; color: var(--ink-3); }
+.ins-coach { display: flex; flex-direction: column; gap: 8px; }
+.ins-notes {
+  font-family: var(--serif);
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  padding: 10px 12px;
+  background: var(--paper);
+  border: 1px solid var(--rule-soft);
+  border-radius: 4px;
+}

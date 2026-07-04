@@ -4,19 +4,19 @@
 // Exposes:
 //   useReviewWorker() -> {
 //     ready,                 // boolean — worker is alive and UCI handshake done
+//     engineId,              // which build booted (see engine-config.js)
 //     status,                // 'idle' | 'running' | 'cancelling'
 //     progress,              // { current, total } during runs
-//     analyzePositions(fens, { depth, onPositionDone, signal }) -> Promise<Array<{ fen, evalCp }>>
+//     analyzePositions(fens, { nodes, depth, onPositionDone }) -> Promise<Array<{ fen, score, bestMove }>>
 //   }
 //
 // `analyzePositions` walks FENs sequentially. For each, it sends
-//   ucinewgame, position fen <fen>, go depth <depth>
+//   position fen <fen>, go nodes <nodes> (or go depth <depth> if no node budget)
 // and waits for `bestmove`, while remembering the deepest `info ... multipv 1`
-// score (already normalized to White's perspective).
+// score (already normalized to White's perspective). Node-limited search keeps
+// quality constant and batch time predictable regardless of position difficulty.
 
 const { useState, useEffect, useRef, useCallback } = React;
-
-const STOCKFISH_PATH = 'slices/engine/vendor/stockfish.js';
 
 function parseInfoScore(line, fenTurn) {
   // Returns { depth, score } or null. Only for the primary line — but Stockfish
@@ -40,6 +40,7 @@ function parseInfoScore(line, fenTurn) {
 
 function useReviewWorker() {
   const [ready, setReady] = useState(false);
+  const [engineId, setEngineId] = useState(null);
   const [status, setStatus] = useState('idle');
   const [progress, setProgress] = useState({ current: 0, total: 0 });
   const workerRef = useRef(null);
@@ -47,34 +48,32 @@ function useReviewWorker() {
   const cancelRef = useRef(false);
 
   useEffect(() => {
-    let worker;
-    try {
-      worker = new Worker(STOCKFISH_PATH);
-      workerRef.current = worker;
-      worker.onmessage = (e) => {
-        const line = (typeof e.data === 'string' ? e.data : String(e.data)).trim();
-        if (messageHandlerRef.current) messageHandlerRef.current(line);
-      };
-      worker.onerror = (err) => {
-        console.warn('[game-review] worker error:', err.message);
-      };
-      worker.postMessage('uci');
-      worker.postMessage('isready');
+    let disposed = false;
 
-      // First-time setup: wait for readyok, then enable.
-      const initHandler = (line) => {
-        if (line === 'readyok') {
-          worker.postMessage('setoption name MultiPV value 1');
-          setReady(true);
-          messageHandlerRef.current = null;
+    window.EngineConfig.bootUciWorker()
+      .then(({ worker, engineId: bootedId }) => {
+        if (disposed) {
+          try { worker.terminate(); } catch {}
+          return;
         }
-      };
-      messageHandlerRef.current = initHandler;
-    } catch (err) {
-      console.warn('[game-review] could not start review worker:', err.message);
-    }
+        workerRef.current = worker;
+        worker.onmessage = (e) => {
+          const line = (typeof e.data === 'string' ? e.data : String(e.data)).trim();
+          if (messageHandlerRef.current) messageHandlerRef.current(line);
+        };
+        worker.onerror = (err) => {
+          console.warn('[game-review] worker error:', err.message);
+        };
+        worker.postMessage('setoption name MultiPV value 1');
+        setEngineId(bootedId);
+        setReady(true);
+      })
+      .catch((err) => {
+        console.warn('[game-review] could not start review worker:', err.message);
+      });
 
     return () => {
+      disposed = true;
       if (workerRef.current) {
         try { workerRef.current.postMessage('quit'); } catch {}
         workerRef.current.terminate();
@@ -83,23 +82,23 @@ function useReviewWorker() {
     };
   }, []);
 
-  // Analyze one FEN; resolves with the best score we saw before `bestmove`.
-  // Handles two edge cases that this Stockfish build doesn't emit `bestmove` for:
+  // Analyze one FEN; resolves { score, bestMove } from what we saw before
+  // `bestmove`. Handles two edge cases without a `bestmove` reply:
   //   - terminal positions (mate already on the board) — recognized via `score mate 0`
   //   - a safety timeout, in case the worker silently stalls
-  const analyzeOne = useCallback((fen, depth) => {
+  const analyzeOne = useCallback((fen, budget) => {
     return new Promise((resolve) => {
       const worker = workerRef.current;
-      if (!worker) { resolve(null); return; }
+      if (!worker) { resolve({ score: null, bestMove: null }); return; }
       const fenTurn = fen.split(' ')[1] || 'w';
       let bestScore = null;
       let settled = false;
-      const settle = (score) => {
+      const settle = (score, bestMove) => {
         if (settled) return;
         settled = true;
         clearTimeout(timer);
         messageHandlerRef.current = null;
-        resolve(score);
+        resolve({ score, bestMove: bestMove || null });
       };
 
       const handler = (line) => {
@@ -109,30 +108,31 @@ function useReviewWorker() {
             bestScore = parsed.score;
             // Terminal: side to move is already mated/giving mate at depth 0.
             if (parsed.score.type === 'mate' && parsed.score.value === 0) {
-              settle(bestScore);
+              settle(bestScore, null);
             }
           }
           return;
         }
         if (line.startsWith('bestmove')) {
-          settle(bestScore);
+          const move = line.split(' ')[1];
+          settle(bestScore, move && move !== '(none)' ? move : null);
         }
       };
       messageHandlerRef.current = handler;
       const timer = setTimeout(() => {
         try { worker.postMessage('stop'); } catch {}
-        settle(bestScore);
+        settle(bestScore, null);
       }, 15000);
 
       worker.postMessage('stop');
       worker.postMessage('position fen ' + fen);
-      worker.postMessage('go depth ' + depth);
+      worker.postMessage(budget.nodes ? 'go nodes ' + budget.nodes : 'go depth ' + (budget.depth || 14));
     });
   }, []);
 
   const analyzePositions = useCallback(async (fens, opts = {}) => {
     if (!workerRef.current || !ready) return [];
-    const depth = opts.depth || 14;
+    const budget = { nodes: opts.nodes, depth: opts.depth };
     const results = [];
     cancelRef.current = false;
     setStatus('running');
@@ -141,10 +141,10 @@ function useReviewWorker() {
     for (let i = 0; i < fens.length; i++) {
       if (cancelRef.current) break;
       const fen = fens[i];
-      const score = await analyzeOne(fen, depth);
-      results.push({ fen, score });
+      const { score, bestMove } = await analyzeOne(fen, budget);
+      results.push({ fen, score, bestMove });
       setProgress({ current: i + 1, total: fens.length });
-      if (opts.onPositionDone) opts.onPositionDone({ index: i, fen, score });
+      if (opts.onPositionDone) opts.onPositionDone({ index: i, fen, score, bestMove });
     }
 
     // Make sure the worker isn't left thinking.
@@ -160,7 +160,7 @@ function useReviewWorker() {
     try { workerRef.current.postMessage('stop'); } catch {}
   }, []);
 
-  return { ready, status, progress, analyzePositions, cancel };
+  return { ready, engineId, status, progress, analyzePositions, cancel };
 }
 
 if (typeof window !== 'undefined') window.useReviewWorker = useReviewWorker;
