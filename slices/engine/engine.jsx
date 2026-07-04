@@ -96,23 +96,21 @@ function useEngine(fen) {
   const lastArrowsRef = useRef([]);
 
   useEffect(() => {
-    let worker;
+    let disposed = false;
     let currentFenTurn = 'w';
     let pvLines = {};
 
-    try {
-      worker = new Worker('slices/engine/vendor/stockfish.js');
+    window.EngineConfig.bootUciWorker().then(({ worker, engineLabel }) => {
+      if (disposed) {
+        try { worker.terminate(); } catch {}
+        return;
+      }
       workerRef.current = worker;
+      console.log('[engine] ready (' + engineLabel + ')');
+      worker.postMessage('setoption name MultiPV value 3');
 
       worker.onmessage = (e) => {
         const line = (typeof e.data === 'string' ? e.data : String(e.data)).trim();
-
-        if (line === 'readyok') {
-          console.log('[engine] ready');
-          worker.postMessage('setoption name MultiPV value 3');
-          setEngineReady(true);
-          return;
-        }
 
         if (line.startsWith('bestmove')) {
           if (lastArrowsRef.current.length > 0) {
@@ -166,16 +164,14 @@ function useEngine(fen) {
         console.warn('[engine] worker error:', err.message);
       };
 
-      // Send uci + isready together; setoption is sent after readyok arrives.
-      worker.postMessage('uci');
-      worker.postMessage('isready');
-
       workerRef._setFenTurn = (t) => { currentFenTurn = t; };
-    } catch (err) {
+      setEngineReady(true);
+    }).catch((err) => {
       console.warn('[engine] could not start worker:', err.message);
-    }
+    });
 
     return () => {
+      disposed = true;
       if (workerRef.current) {
         workerRef.current.postMessage('quit');
         workerRef.current.terminate();

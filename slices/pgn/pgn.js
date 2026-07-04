@@ -309,6 +309,37 @@ function serialize(tree, opts = {}) {
   return out;
 }
 
+// ---- Multi-game parsing ----
+
+// Split a PGN text containing multiple games into one chunk per game.
+// A new game starts at a tag-pair line that appears after movetext. Splitting
+// happens BEFORE parsing because extractHeaders scans the whole text — parsing
+// an unsplit multi-game file would merge every game's headers.
+function splitGames(text) {
+  const lines = String(text || '').split(/\r?\n/);
+  const chunks = [];
+  let cur = [];
+  let seenMovetext = false;
+  for (const line of lines) {
+    const isTag = /^\s*\[\w+\s+"[^"]*"\]\s*$/.test(line);
+    if (isTag && seenMovetext) {
+      chunks.push(cur.join('\n'));
+      cur = [];
+      seenMovetext = false;
+    }
+    cur.push(line);
+    if (!isTag && line.trim() !== '') seenMovetext = true;
+  }
+  if (cur.join('\n').trim() !== '') chunks.push(cur.join('\n'));
+  return chunks.filter(c => c.trim() !== '');
+}
+
+// Parse every game in a (possibly multi-game) PGN text.
+// Returns an array of { tree, headers, warnings } — same shape as parse().
+function parseAll(text, opts = {}) {
+  return splitGames(text).map(chunk => parse(chunk, opts));
+}
+
 function todayYYYYMMDD() {
   const d = new Date();
   const m = String(d.getMonth() + 1).padStart(2, '0');
@@ -318,7 +349,7 @@ function todayYYYYMMDD() {
 
 // ---- Export ----
 
-const PGN = { parse, serialize, tokenize, extractHeaders };
+const PGN = { parse, parseAll, splitGames, serialize, tokenize, extractHeaders };
 
 if (typeof window !== 'undefined') window.PGN = PGN;
 export default PGN;
