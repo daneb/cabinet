@@ -683,6 +683,29 @@ function App() {
               ? 'Drill mode — play from memory. Press ? for hint.'
               : 'Click or drag a piece. ←/→ to step, ↑/↓ for variations, F to flip.'}
           </p>
+
+          <div className="board-extras">
+            <div className="board-card">
+              <window.LibraryPanel
+                library={library}
+                setLibrary={setLibrary}
+                settings={reviewSettings}
+                setSettings={setReviewSettings}
+                reviewWorker={reviewWorker}
+                batchReview={batchReview}
+                currentTree={tree}
+                onOpenGame={handleOpenLibraryGame}
+                showToast={showToast}
+              />
+            </div>
+            <div className="board-card">
+              <window.InsightsPanel
+                library={library}
+                settings={reviewSettings}
+                reviewWorker={reviewWorker}
+              />
+            </div>
+          </div>
         </div>
 
         <aside className="panel">
@@ -757,24 +780,6 @@ function App() {
           </div>
 
           <window.GameReviewPanel tree={tree} setTree={setTree} reviewWorker={reviewWorker} />
-
-          <window.LibraryPanel
-            library={library}
-            setLibrary={setLibrary}
-            settings={reviewSettings}
-            setSettings={setReviewSettings}
-            reviewWorker={reviewWorker}
-            batchReview={batchReview}
-            currentTree={tree}
-            onOpenGame={handleOpenLibraryGame}
-            showToast={showToast}
-          />
-
-          <window.InsightsPanel
-            library={library}
-            settings={reviewSettings}
-            reviewWorker={reviewWorker}
-          />
 
           <ChapterPanel tree={tree} onSelectChapter={(nodeId) => goToNode(nodeId)} onDrillChapter={(nodeId) => startDrill(nodeId, 'w', 'any')} />
 
