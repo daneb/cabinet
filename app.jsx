@@ -23,6 +23,8 @@ import './slices/game-review/elo.js';
 import './slices/insights/insights.js';
 import './slices/insights/coach.js';
 import './slices/insights/insights.jsx';
+import './slices/patterns/patterns-data.js';
+import './slices/patterns/patterns-panel.jsx';
 
 const { useState, useEffect, useCallback, useMemo, useRef } = React;
 
@@ -143,6 +145,22 @@ function App() {
     showToast('Opened from library');
   }, [dirty, showToast]);
 
+  // ---- Patterns ----
+
+  const handleOpenPattern = useCallback((newTree, pattern) => {
+    if (dirty && !confirm('Discard current line?')) return false;
+    setTree(newTree);
+    setCurrentNodeId(newTree.rootId);
+    setActiveId(null);
+    setActiveName(pattern.name);
+    setSelected(null);
+    setLegalTargets([]);
+    setFlipped(pattern.sideToWin === 'b');
+    setDirty(false);
+    showToast(`Loaded ${pattern.name}`);
+    return true;
+  }, [dirty, showToast]);
+
   // ---- Sync status polling ----
 
   const fetchSyncStatus = useCallback(async () => {
@@ -185,6 +203,21 @@ function App() {
     drill, startDrill, handleMove: handleDrillMove,
     showAnswer, endDrill, closeDrill, drillMisses,
   } = window.useDrill(tree, setTree, currentNodeId, setCurrentNodeId);
+
+  // Pattern drills start on a freshly loaded tree; defer startDrill until that
+  // tree has committed so the drill hook counts nodes on the right tree.
+  const pendingPatternDrill = useRef(null);
+  const handleDrillPattern = useCallback((newTree, pattern) => {
+    if (!handleOpenPattern(newTree, pattern)) return;
+    pendingPatternDrill.current = { rootId: newTree.rootId, side: pattern.sideToWin };
+  }, [handleOpenPattern]);
+
+  useEffect(() => {
+    const pending = pendingPatternDrill.current;
+    if (!pending || !tree.nodes[pending.rootId]) return;
+    pendingPatternDrill.current = null;
+    startDrill(pending.rootId, pending.side, 'mainline');
+  }, [tree, startDrill]);
 
   const handleDrillContext = useCallback((nodeId, x, y) => {
     // Find the root of the variation if this node lives inside one
@@ -703,6 +736,13 @@ function App() {
                 library={library}
                 settings={reviewSettings}
                 reviewWorker={reviewWorker}
+              />
+            </div>
+            <div className="board-card board-card--wide">
+              <window.PatternsPanel
+                onOpenPattern={handleOpenPattern}
+                onDrillPattern={handleDrillPattern}
+                showToast={showToast}
               />
             </div>
           </div>

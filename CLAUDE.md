@@ -30,6 +30,7 @@ A single-page chess opening analysis app ("Cabinet"). Vanilla React; slices expo
 | Game review | `slices/game-review/` | `window.GameReviewClassify` (win-pct classification), `window.GameReviewFeatures` (phase/situation/motif tagging), `window.GameReviewElo` (ACPL→rating band), `window.ReviewBudgets` (node-budget tiers), `window.useReviewWorker`, `window.useBatchReview`, `window.GameReviewPanel` |
 | Library | `slices/library/` | `window.GameLibrary` (store + settings), `window.LibraryPanel` — multi-game import, user side, batch review |
 | Insights | `slices/insights/` | `window.Insights` (cross-game aggregation), `window.InsightsCoach` (optional Ollama narration), `window.InsightsPanel` |
+| Patterns | `slices/patterns/` | `window.Patterns` (curated checkmate-pattern dataset + `buildTree`), `window.PatternsPanel` — view/drill classical mating patterns; `category` extends to openings/middlegame later |
 | App | `app.jsx` | `<App>` — thin orchestrator wiring all slices, state in `useState` |
 
 **Chess engine** (`slices/game-core/chess.js`): board is a 64-char string (index 0 = a8). State object holds `{ board, turn, castling, enPassant, halfmove, fullmove }`. Moves are validated through pseudo-legal generation → king-safety legality check. SAN notation with disambiguation and check/mate suffixes.
