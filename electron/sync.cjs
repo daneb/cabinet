@@ -15,7 +15,7 @@ let _storeInstance = null;
 
 function getStore() {
   if (_storeInstance) return _storeInstance;
-  const Store = require('electron-store');
+  const Store = require('electron-store').default;
   _storeInstance = new Store({ name: 'sync-config' });
   return _storeInstance;
 }
