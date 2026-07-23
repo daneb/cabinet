@@ -17,7 +17,7 @@
     "test:perft": "PERFT_DEEP=1 node --test tests/game-core/perft.test.js"
   },
   "dependencies": {
-    "electron-store": "^8.2.0",
+    "electron-store": "^11.0.2",
     "simple-git": "^3.25.0"
   },
   "devDependencies": {
