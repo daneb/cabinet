@@ -21,7 +21,7 @@
     "simple-git": "^3.25.0"
   },
   "devDependencies": {
-    "electron": "^31.0.0",
+    "electron": "^43.2.0",
     "electron-builder": "^24.13.3",
     "esbuild": "0.28.1"
   },
