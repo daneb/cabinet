@@ -28,8 +28,7 @@ dist/
 .DS_Store
 Thumbs.db
 
-# Ignore package-lock.json and yarn.lock if using npm or yarn respectively
-package-lock.json
+# package-lock.json is committed for reproducible installs and dependency scanning
 yarn.lock
 
 # Ignore any .env files

@@ -1,0 +1,37 @@
+name: Security
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Audit runtime dependencies (blocking)
+        run: npm audit --omit=dev --audit-level=high
+
+      - name: Audit devDependencies (report only)
+        if: always()
+        run: |
+          npm audit --audit-level=high || echo "::warning::devDependency vulnerabilities found (see log above). Not blocking this build — fix on your own schedule."
+
+  osv-scan:
+    permissions:
+      actions: read
+      security-events: write
+      contents: read
+    uses: "google/osv-scanner-action/.github/workflows/osv-scanner-reusable.yml@v2.3.8"
+    with:
+      fail-on-vuln: false
