@@ -30,8 +30,8 @@ function PatternsPanel({ onOpenPattern, onDrillPattern, showToast }) {
   }, [build, onDrillPattern]);
 
   return (
-    <div className="panel-section">
-      <div className="section-label">
+    <div className="patterns">
+      <div className="rail-label">
         <span>Patterns</span>
         <span className="count">{window.Patterns.PATTERNS.length}</span>
       </div>
