@@ -223,6 +223,7 @@ html, body, #root { height: 100%; }
 
 /* ===== Board column ===== */
 .board-col {
+  --board-max: min(66vh, 760px);
   flex: 1 1 320px;
   min-width: 180px;
   display: flex;
@@ -234,7 +235,7 @@ html, body, #root { height: 100%; }
 
 .position-meta {
   width: 100%;
-  max-width: 560px;
+  max-width: calc(42px + var(--board-max));
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
@@ -274,7 +275,7 @@ html, body, #root { height: 100%; }
 /* ===== Board + eval bar layout ===== */
 .board-with-eval {
   width: 100%;
-  max-width: 582px;
+  max-width: calc(42px + var(--board-max));
   display: flex;
   gap: 8px;
   align-items: stretch;
@@ -297,7 +298,7 @@ html, body, #root { height: 100%; }
 .board-frame {
   width: 100%;
   display: grid;
-  grid-template-columns: 20px minmax(0, 560px);
+  grid-template-columns: 20px minmax(0, var(--board-max));
   grid-template-rows: auto 22px;
   gap: 0;
 }
@@ -397,7 +398,7 @@ html, body, #root { height: 100%; }
 .piece {
   position: relative;
   font-family: 'DejaVu Sans', 'Noto Sans Symbols 2', 'Segoe UI Symbol', 'Apple Symbols', sans-serif;
-  font-size: clamp(16px, 11.5cqw, 46px);
+  font-size: clamp(14px, 8.21cqw, 64px);
   line-height: 1;
   z-index: 1;
   user-select: none;
