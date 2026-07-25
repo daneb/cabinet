@@ -89,6 +89,12 @@ function App() {
   const syncingTimerRef = useRef(null);
   const syncSectionRef = useRef(null);
 
+  // ---- Layout: left-rail tabs + right-rail accordions ----
+  const [activeLeftTab, setActiveLeftTab] = useState('library');
+  const [reviewOpen, setReviewOpen] = useState(false);
+  const [chaptersOpen, setChaptersOpen] = useState(false);
+  const [syncOpen, setSyncOpen] = useState(false);
+
   const toastTimerRef = useRef(null);
   const showToast = useCallback((msg) => {
     setToast(msg);
@@ -487,6 +493,7 @@ function App() {
 
 
   const mainlinePlyCount = window.MoveTree.mainlineDepth(tree);
+  const chapters = useMemo(() => window.MoveTree.chapterStats(tree), [tree]);
 
   const turnLabel = currentState.turn === 'w' ? 'White to move' : 'Black to move';
   const mateOrStale = useMemo(() => {
@@ -615,7 +622,8 @@ function App() {
       <header className="topbar">
         <div className="brand">
           <span className="brand-mark">Cabinet</span>
-          <span className="brand-sub">Opening Analysis Board</span>
+          <span className="brand-tag">Opening</span>
+          <span className="brand-sub">Analysis Board</span>
         </div>
         <div className="topbar-right">
           {syncStatus && syncStatus.enabled ? (
@@ -652,6 +660,7 @@ function App() {
             style={{ fontSize: 12, padding: '2px 10px' }}
             onClick={() => {
               setSyncBannerDismissed(true);
+              setSyncOpen(true);
               if (syncSectionRef.current) syncSectionRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
             }}
           >
@@ -670,7 +679,63 @@ function App() {
         </div>
       ) : null}
 
-      <div className="main">
+      <div className="content-row">
+        <aside className="left-rail">
+          <div className="rail-tabs">
+            {[
+              { key: 'library', label: 'Library' },
+              { key: 'insights', label: 'Insights' },
+              { key: 'patterns', label: 'Patterns' },
+              { key: 'drills', label: 'Drills' },
+            ].map(t => (
+              <button
+                key={t.key}
+                className={`rail-tab${activeLeftTab === t.key ? ' active' : ''}`}
+                onClick={() => setActiveLeftTab(t.key)}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+          <div className="rail-tab-content">
+            {activeLeftTab === 'library' ? (
+              <window.LibraryPanel
+                library={library}
+                setLibrary={setLibrary}
+                settings={reviewSettings}
+                setSettings={setReviewSettings}
+                reviewWorker={reviewWorker}
+                batchReview={batchReview}
+                currentTree={tree}
+                onOpenGame={handleOpenLibraryGame}
+                showToast={showToast}
+              />
+            ) : activeLeftTab === 'insights' ? (
+              <window.InsightsPanel
+                library={library}
+                settings={reviewSettings}
+                reviewWorker={reviewWorker}
+              />
+            ) : activeLeftTab === 'patterns' ? (
+              <window.PatternsPanel
+                onOpenPattern={handleOpenPattern}
+                onDrillPattern={handleDrillPattern}
+                showToast={showToast}
+              />
+            ) : (
+              <div className="drills-placeholder">
+                <div className="rail-label"><span>Drills</span></div>
+                <div className="gr-empty">
+                  Opening drills and middle-game tactics trainers will live here — spaced repetition on your saved lines and patterns.
+                </div>
+                <div style={{ marginTop: 14, fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '0.06em', color: 'var(--accent)' }}>
+                  COMING SOON
+                </div>
+              </div>
+            )}
+          </div>
+        </aside>
+
         <div className="board-col">
           <div className="position-meta">
             <div className="position-title">
@@ -716,40 +781,10 @@ function App() {
               ? 'Drill mode — play from memory. Press ? for hint.'
               : 'Click or drag a piece. ←/→ to step, ↑/↓ for variations, F to flip.'}
           </p>
-
-          <div className="board-extras">
-            <div className="board-card">
-              <window.LibraryPanel
-                library={library}
-                setLibrary={setLibrary}
-                settings={reviewSettings}
-                setSettings={setReviewSettings}
-                reviewWorker={reviewWorker}
-                batchReview={batchReview}
-                currentTree={tree}
-                onOpenGame={handleOpenLibraryGame}
-                showToast={showToast}
-              />
-            </div>
-            <div className="board-card">
-              <window.InsightsPanel
-                library={library}
-                settings={reviewSettings}
-                reviewWorker={reviewWorker}
-              />
-            </div>
-            <div className="board-card board-card--wide">
-              <window.PatternsPanel
-                onOpenPattern={handleOpenPattern}
-                onDrillPattern={handleDrillPattern}
-                showToast={showToast}
-              />
-            </div>
-          </div>
         </div>
 
-        <aside className="panel">
-          <div className="panel-section moves-section">
+        <aside className="right-rail">
+          <div className="rail-card">
             {drill.active ? (
               <>
                 <window.DrillStatusBar
@@ -772,7 +807,7 @@ function App() {
                   <span>Main Line</span>
                   <span className="count">{mainlinePlyCount} {mainlinePlyCount === 1 ? 'ply' : 'plies'}</span>
                 </div>
-                <div className="moves-scroll">
+                <div className="moves-scroll moves-cap">
                   <window.MoveList
                     model={moveModel}
                     currentNodeId={currentNodeId}
@@ -804,7 +839,7 @@ function App() {
             )}
           </div>
 
-          <div className="panel-section">
+          <div className="rail-card rail-card--grow">
             <div className="section-label">
               <span>Saved Lines</span>
               <span className="count">{saves.length}</span>
@@ -819,20 +854,47 @@ function App() {
             />
           </div>
 
-          <window.GameReviewPanel tree={tree} setTree={setTree} reviewWorker={reviewWorker} />
+          <div className="accordion">
+            <button className="accordion-header" onClick={() => setReviewOpen(v => !v)}>
+              <span>Game Review</span>
+              <span>{reviewOpen ? '−' : '+'}</span>
+            </button>
+            {reviewOpen ? (
+              <div className="accordion-body">
+                <window.GameReviewPanel tree={tree} setTree={setTree} reviewWorker={reviewWorker} />
+              </div>
+            ) : null}
+          </div>
 
-          <ChapterPanel tree={tree} onSelectChapter={(nodeId) => goToNode(nodeId)} onDrillChapter={(nodeId) => startDrill(nodeId, 'w', 'any')} />
-
-          <div className="panel-section" ref={syncSectionRef}>
-            <div className="section-label">
-              <span>Sync</span>
+          {chapters.length > 0 ? (
+            <div className="accordion">
+              <button className="accordion-header" onClick={() => setChaptersOpen(v => !v)}>
+                <span>Chapters</span>
+                <span>{chaptersOpen ? '−' : '+'}</span>
+              </button>
+              {chaptersOpen ? (
+                <div className="accordion-body">
+                  <ChapterPanel tree={tree} onSelectChapter={(nodeId) => goToNode(nodeId)} onDrillChapter={(nodeId) => startDrill(nodeId, 'w', 'any')} />
+                </div>
+              ) : null}
             </div>
-            <window.SyncPanel
-              syncStatus={syncStatus}
-              onConnected={() => { fetchSyncStatus(); setSyncBannerDismissed(true); }}
-              onDisconnected={() => { fetchSyncStatus(); }}
-              onPull={handlePull}
-            />
+          ) : null}
+
+          <div className="accordion" ref={syncSectionRef}>
+            <button className="accordion-header" onClick={() => setSyncOpen(v => !v)}>
+              <span>Sync</span>
+              <span>{syncOpen ? '−' : '+'}</span>
+            </button>
+            {syncOpen ? (
+              <div className="accordion-body">
+                <window.SyncPanel
+                  syncStatus={syncStatus}
+                  onConnected={() => { fetchSyncStatus(); setSyncBannerDismissed(true); }}
+                  onDisconnected={() => { fetchSyncStatus(); }}
+                  onPull={handlePull}
+                />
+              </div>
+            ) : null}
           </div>
         </aside>
       </div>
@@ -853,7 +915,7 @@ function App() {
           <div className="promotion-dialog" style={{ maxWidth: '560px' }} onClick={(e) => e.stopPropagation()}>
             <h3>Import PGN</h3>
             <textarea
-              style={{ width: '100%', height: '200px', marginTop: 8, fontFamily: 'monospace', fontSize: 13, background: 'var(--surface)', color: 'var(--ink)', border: '1px solid var(--ink-4)', borderRadius: 4, padding: 8, resize: 'vertical' }}
+              style={{ width: '100%', height: '200px', marginTop: 8, fontFamily: 'monospace', fontSize: 13, background: 'var(--surface)', color: 'var(--ink)', border: '1px solid var(--rule)', borderRadius: 0, padding: 8, resize: 'vertical' }}
               placeholder="Paste PGN here..."
               value={importText}
               onChange={(e) => setImportText(e.target.value)}
@@ -887,11 +949,10 @@ function App() {
               position: 'fixed',
               left: drillMenu.x,
               top: drillMenu.y,
-              background: 'var(--paper)',
+              background: 'var(--paper-2)',
               border: '1px solid var(--rule)',
-              borderRadius: 6,
+              borderRadius: 0,
               padding: '4px 0',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.28)',
               zIndex: 9001,
               minWidth: 200,
             }}
@@ -967,11 +1028,6 @@ function ChapterPanel({ tree, onSelectChapter, onDrillChapter }) {
   if (chapters.length === 0) return null;
 
   return (
-    <div className="panel-section">
-      <div className="section-label">
-        <span>Chapters</span>
-        <span className="count">{chapters.length}</span>
-      </div>
       <div className="saves-list">
         {chapters.map(ch => (
           <div
@@ -999,7 +1055,6 @@ function ChapterPanel({ tree, onSelectChapter, onDrillChapter }) {
           </div>
         ))}
       </div>
-    </div>
   );
 }
 

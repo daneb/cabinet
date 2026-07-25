@@ -104,13 +104,7 @@ function GameReviewPanel({ tree, setTree, reviewWorker }) {
   const isRunning = status !== 'idle';
 
   return (
-    <div className="panel-section">
-      <div className="section-label">
-        <span>Game Review</span>
-        {hasAnalysis ? <span className="count">{moves.length} moves</span> : null}
-      </div>
-
-      <div className="game-review">
+    <div className="game-review">
         {isRunning ? (
           <div className="gr-progress">
             <div className="gr-progress-text">
@@ -189,7 +183,6 @@ function GameReviewPanel({ tree, setTree, reviewWorker }) {
             </div>
           ) : null
         )}
-      </div>
     </div>
   );
 }

@@ -134,14 +134,13 @@ function LibraryPanel({
   }, [currentTree]);
 
   return (
-    <div className="panel-section">
-      <div className="section-label">
+    <div className="library">
+      <div className="rail-label">
         <span>Game Library</span>
         {library.length > 0 ? <span className="count">{library.length}</span> : null}
       </div>
 
-      <div className="library">
-        <div className="lib-settings">
+      <div className="lib-settings">
           <input
             type="text"
             placeholder="Your name(s), comma-separated"
@@ -267,7 +266,6 @@ function LibraryPanel({
           </div>
         )}
       </div>
-    </div>
   );
 }
 

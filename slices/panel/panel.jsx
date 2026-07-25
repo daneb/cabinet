@@ -15,7 +15,7 @@ function NavControls({ atStart, atEnd, onStart, onBack, onForward, onEnd, onFlip
       <button className="nav-btn" onClick={onEnd} disabled={atEnd} title="Go to end">
         <svg viewBox="0 0 16 16" fill="currentColor"><path d="M13 3v10h-1.5V3H13zM2.5 3L10 8l-7.5 5V3z"/></svg>
       </button>
-      <button className="nav-btn" onClick={onFlip} title="Flip board (F)">
+      <button className="nav-btn primary" onClick={onFlip} title="Flip board (F)">
         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M3 6h10M3 6l3-3M3 6l3 3M13 10H3M13 10l-3-3M13 10l-3 3"/></svg>
       </button>
     </div>
@@ -150,8 +150,8 @@ function SyncPanel({ syncStatus, onConnected, onDisconnected, onPull }) {
     fontSize: 12,
     background: 'var(--surface)',
     color: 'var(--ink)',
-    border: '1px solid var(--ink-4)',
-    borderRadius: 3,
+    border: '1px solid var(--rule)',
+    borderRadius: 0,
     padding: '4px 6px',
     boxSizing: 'border-box',
   };

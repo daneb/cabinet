@@ -63,8 +63,8 @@ function InsightsPanel({ library, settings, reviewWorker }) {
 
   if (!agg || agg.games === 0) {
     return (
-      <div className="panel-section">
-        <div className="section-label"><span>Insights</span></div>
+      <div className="insights">
+        <div className="rail-label"><span>Insights</span></div>
         <div className="gr-empty">
           Review library games (with your side set) to see cross-game patterns.
           {excludedNote ? <div className="ins-excluded">{excludedNote}</div> : null}
@@ -74,13 +74,12 @@ function InsightsPanel({ library, settings, reviewWorker }) {
   }
 
   return (
-    <div className="panel-section">
-      <div className="section-label">
+    <div className="insights">
+      <div className="rail-label">
         <span>Insights</span>
         <span className="count">{agg.games} games · {agg.moves} moves</span>
       </div>
 
-      <div className="insights">
         {agg.elo ? (
           <div className="ins-elo" title="Derived from average centipawn loss; depends on time control and opposition. Not an official rating.">
             Estimated playing strength: <strong>{agg.elo.rating} ± {agg.elo.band}</strong> ({agg.elo.games} games)
@@ -164,7 +163,6 @@ function InsightsPanel({ library, settings, reviewWorker }) {
             {coach.notes ? <div className="ins-notes">{coach.notes}</div> : null}
           </div>
         ) : null}
-      </div>
     </div>
   );
 }
