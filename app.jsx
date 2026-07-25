@@ -478,7 +478,7 @@ function App() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [currentNodeId, tree, goToNode]);
+  }, [currentNodeId, tree, goToNode, drill.active, showAnswer, endDrill]);
 
   // ---- Move list display ----
 
