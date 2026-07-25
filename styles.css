@@ -807,13 +807,21 @@ html, body, #root { height: 100%; }
   display: flex;
   flex-direction: column;
   gap: 6px;
-  max-height: 220px;
-  overflow-y: auto;
   margin: 0 -6px;
   padding: 0 6px;
 }
 .saves-list::-webkit-scrollbar { width: 8px; }
 .saves-list::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 0; }
+
+/* Saved Lines sits in a flex-grow card (right rail) with real height to give —
+   let its list fill that space and scroll internally. Everywhere else (Patterns
+   categories, Library) .saves-list lives inside an already-scrolling tab body,
+   so it should just flow at full height instead of adding a nested scroll. */
+.rail-card--grow .saves-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
 
 .save-item {
   display: grid;
@@ -1019,7 +1027,6 @@ html, body, #root { height: 100%; }
   background: var(--surface-2);
 }
 .lib-paste { display: flex; flex-direction: column; gap: 6px; }
-.lib-list { max-height: 260px; overflow-y: auto; }
 .lib-list .save-item {
   grid-template-columns: auto 1fr auto;
   cursor: default;
