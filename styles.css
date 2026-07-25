@@ -223,8 +223,8 @@ html, body, #root { height: 100%; }
 
 /* ===== Board column ===== */
 .board-col {
-  flex: 1 0 600px;
-  min-width: 600px;
+  flex: 1 1 320px;
+  min-width: 180px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -233,11 +233,13 @@ html, body, #root { height: 100%; }
 }
 
 .position-meta {
-  width: 600px;
-  max-width: 100%;
+  width: 100%;
+  max-width: 560px;
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: baseline;
+  row-gap: 2px;
 }
 .position-title {
   font-family: var(--serif);
@@ -247,6 +249,9 @@ html, body, #root { height: 100%; }
   color: var(--ink);
   flex: 1;
   min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .position-title .untitled { color: var(--ink-3); font-style: italic; }
 .position-status {
@@ -268,6 +273,8 @@ html, body, #root { height: 100%; }
 
 /* ===== Board + eval bar layout ===== */
 .board-with-eval {
+  width: 100%;
+  max-width: 582px;
   display: flex;
   gap: 8px;
   align-items: stretch;
@@ -288,9 +295,10 @@ html, body, #root { height: 100%; }
 
 /* Board wrapper with labels */
 .board-frame {
+  width: 100%;
   display: grid;
-  grid-template-columns: 20px 560px;
-  grid-template-rows: 560px 22px;
+  grid-template-columns: 20px minmax(0, 560px);
+  grid-template-rows: auto 22px;
   gap: 0;
 }
 
@@ -326,6 +334,7 @@ html, body, #root { height: 100%; }
   grid-column: 2;
   grid-row: 1;
   position: relative;
+  container-type: inline-size;
 }
 
 /* Arrow SVG overlay */
@@ -342,8 +351,8 @@ html, body, #root { height: 100%; }
   display: grid;
   grid-template-columns: repeat(8, 1fr);
   grid-template-rows: repeat(8, 1fr);
-  width: 560px;
-  height: 560px;
+  width: 100%;
+  aspect-ratio: 1 / 1;
   border: 3px solid var(--board-border);
   user-select: none;
 }
@@ -388,7 +397,7 @@ html, body, #root { height: 100%; }
 .piece {
   position: relative;
   font-family: 'DejaVu Sans', 'Noto Sans Symbols 2', 'Segoe UI Symbol', 'Apple Symbols', sans-serif;
-  font-size: 46px;
+  font-size: clamp(16px, 11.5cqw, 46px);
   line-height: 1;
   z-index: 1;
   user-select: none;
