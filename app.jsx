@@ -800,7 +800,7 @@ function App() {
               onDragStart={handleDragStart}
               onDragEnd={handleDragEnd}
               onDrop={handleDrop}
-              arrows={drill.active ? [] : arrows}
+              arrows={drill.active || mateOrStale ? [] : arrows}
             />
           </div>
 
