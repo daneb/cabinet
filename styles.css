@@ -841,12 +841,24 @@ html, body, #root { height: 100%; }
   border-color: var(--accent);
   background: rgba(163,57,44,0.06);
 }
+.save-item.completed {
+  border-color: var(--accent-2);
+  background: rgba(92,138,92,0.06);
+}
 .save-name {
   font-family: var(--serif);
   font-weight: 500;
   font-size: 16px;
   color: var(--ink);
   line-height: 1.2;
+}
+.pattern-drill-count {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--accent-2);
+  margin-left: 8px;
+  letter-spacing: 0.02em;
 }
 .save-meta {
   font-family: var(--mono);

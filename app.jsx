@@ -24,6 +24,7 @@ import './slices/insights/insights.js';
 import './slices/insights/coach.js';
 import './slices/insights/insights.jsx';
 import './slices/patterns/patterns-data.js';
+import './slices/patterns/patterns-progress.js';
 import './slices/patterns/patterns-panel.jsx';
 
 const { useState, useEffect, useCallback, useMemo, useRef } = React;
@@ -213,10 +214,23 @@ function App() {
   // Pattern drills start on a freshly loaded tree; defer startDrill until that
   // tree has committed so the drill hook counts nodes on the right tree.
   const pendingPatternDrill = useRef(null);
+  // Which pattern (if any) the in-progress drill was launched from, so a
+  // COMPLETE phase can be attributed back to it. Cleared for repertoire drills.
+  const activePatternIdRef = useRef(null);
+  const [patternsProgress, setPatternsProgress] = useState(() => window.PatternsProgress.loadProgress());
+
   const handleDrillPattern = useCallback((newTree, pattern) => {
     if (!handleOpenPattern(newTree, pattern)) return;
     pendingPatternDrill.current = { rootId: newTree.rootId, side: pattern.sideToWin };
+    activePatternIdRef.current = pattern.id;
   }, [handleOpenPattern]);
+
+  // startDrill wrapper for every non-pattern drill entry point, so a stale
+  // pattern id can't get credited with a repertoire drill's completion.
+  const startRepertoireDrill = useCallback((...args) => {
+    activePatternIdRef.current = null;
+    startDrill(...args);
+  }, [startDrill]);
 
   useEffect(() => {
     const pending = pendingPatternDrill.current;
@@ -224,6 +238,19 @@ function App() {
     pendingPatternDrill.current = null;
     startDrill(pending.rootId, pending.side, 'mainline');
   }, [tree, startDrill]);
+
+  // Record a pattern drill completion once per COMPLETE phase.
+  const recordedCompletionRef = useRef(false);
+  useEffect(() => {
+    if (drill.phase !== 'COMPLETE') {
+      recordedCompletionRef.current = false;
+      return;
+    }
+    const patternId = activePatternIdRef.current;
+    if (!patternId || recordedCompletionRef.current) return;
+    recordedCompletionRef.current = true;
+    setPatternsProgress(prev => window.PatternsProgress.recordCompletion(prev, patternId));
+  }, [drill.phase]);
 
   const handleDrillContext = useCallback((nodeId, x, y) => {
     // Find the root of the variation if this node lives inside one
@@ -643,7 +670,7 @@ function App() {
           {drill.active ? (
             <button className="btn btn-ghost" onClick={endDrill}>End drill</button>
           ) : (
-            <button className="btn btn-primary" onClick={() => startDrill(currentNodeId, 'w', 'any')}>
+            <button className="btn btn-primary" onClick={() => startRepertoireDrill(currentNodeId, 'w', 'any')}>
               Start Drill
             </button>
           )}
@@ -721,6 +748,7 @@ function App() {
                 onOpenPattern={handleOpenPattern}
                 onDrillPattern={handleDrillPattern}
                 showToast={showToast}
+                progress={patternsProgress}
               />
             ) : (
               <div className="drills-placeholder">
@@ -874,7 +902,7 @@ function App() {
               </button>
               {chaptersOpen ? (
                 <div className="accordion-body">
-                  <ChapterPanel tree={tree} onSelectChapter={(nodeId) => goToNode(nodeId)} onDrillChapter={(nodeId) => startDrill(nodeId, 'w', 'any')} />
+                  <ChapterPanel tree={tree} onSelectChapter={(nodeId) => goToNode(nodeId)} onDrillChapter={(nodeId) => startRepertoireDrill(nodeId, 'w', 'any')} />
                 </div>
               ) : null}
             </div>
@@ -960,14 +988,14 @@ function App() {
             <button
               className="btn btn-ghost"
               style={{ display: 'block', width: '100%', textAlign: 'left', padding: '7px 14px', fontSize: 13, color: 'var(--ink)' }}
-              onClick={() => { startDrill(drillMenu.nodeId, 'w', 'any'); closeDrillMenu(); }}
+              onClick={() => { startRepertoireDrill(drillMenu.nodeId, 'w', 'any'); closeDrillMenu(); }}
             >
               Drill from here (any book)
             </button>
             <button
               className="btn btn-ghost"
               style={{ display: 'block', width: '100%', textAlign: 'left', padding: '7px 14px', fontSize: 13, color: 'var(--ink)' }}
-              onClick={() => { startDrill(drillMenu.nodeId, 'w', 'mainline'); closeDrillMenu(); }}
+              onClick={() => { startRepertoireDrill(drillMenu.nodeId, 'w', 'mainline'); closeDrillMenu(); }}
             >
               Drill from here (mainline only)
             </button>

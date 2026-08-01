@@ -2,7 +2,7 @@
 
 const { useState, useCallback } = React;
 
-function PatternsPanel({ onOpenPattern, onDrillPattern, showToast }) {
+function PatternsPanel({ onOpenPattern, onDrillPattern, showToast, progress }) {
   const [openCategories, setOpenCategories] = useState(() => ({ mate: true }));
   const [expandedId, setExpandedId] = useState(null);
 
@@ -53,14 +53,23 @@ function PatternsPanel({ onOpenPattern, onDrillPattern, showToast }) {
 
             {open ? (
               <div className="saves-list">
-                {items.map(p => (
+                {items.map(p => {
+                  const drillCount = progress?.[p.id]?.count || 0;
+                  return (
                   <div
                     key={p.id}
-                    className="save-item"
+                    className={`save-item${drillCount > 0 ? ' completed' : ''}`}
                     onClick={() => setExpandedId(id => id === p.id ? null : p.id)}
                   >
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div className="save-name">{p.name}</div>
+                      <div className="save-name">
+                        {p.name}
+                        {drillCount > 0 ? (
+                          <span className="pattern-drill-count" title={`Drilled ${drillCount} time${drillCount !== 1 ? 's' : ''}`}>
+                            ✓ {drillCount}
+                          </span>
+                        ) : null}
+                      </div>
                       <div
                         className="save-meta"
                         style={expandedId === p.id ? {} : { whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}
@@ -90,7 +99,8 @@ function PatternsPanel({ onOpenPattern, onDrillPattern, showToast }) {
                       </button>
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
             ) : null}
           </div>
