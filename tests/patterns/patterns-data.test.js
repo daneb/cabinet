@@ -11,8 +11,8 @@ globalThis.MoveTree = MoveTree;
 const { PATTERNS, CATEGORIES, buildTree } = Patterns;
 
 describe('patterns dataset shape', () => {
-  it('has exactly 25 entries', () => {
-    assert.equal(PATTERNS.length, 25);
+  it('has exactly 33 entries', () => {
+    assert.equal(PATTERNS.length, 33);
   });
 
   it('has unique ids', () => {

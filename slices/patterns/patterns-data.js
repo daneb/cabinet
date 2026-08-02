@@ -1,14 +1,20 @@
-// Patterns slice — curated, replayable tactical/mating patterns.
+// Patterns slice — curated, replayable tactical/mating and endgame patterns.
 // Pure data + pure helpers. No React. Every entry is mechanically verified by
 // tests/patterns/patterns-data.test.js: the FEN must parse, every SAN in `line`
 // must be legal and round-trip through Chess.toSAN, and the final move must be
-// a real checkmate. `category` is the extension point for openings, middlegame
-// strategies, and technical endgames later.
+// a real checkmate. `category` is the extension point for openings and
+// middlegame strategies later; 'endgame' entries are lone-king basic mating
+// techniques (K+Q, K+R, K+2B, K+B+N vs K) — every line is a short, fully
+// forced sequence, same as the 'mate' entries. Free-form technique with
+// multiple correct paths (opposition, Lucena, Philidor) doesn't fit this
+// single-canonical-line model and needs a different, engine-eval-based drill
+// mechanism — deliberately left for later.
 
 const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
 const CATEGORIES = [
   { id: 'mate', label: 'Checkmate patterns' },
+  { id: 'endgame', label: 'Endgame technique' },
 ];
 
 const PATTERNS = [
@@ -260,6 +266,86 @@ const PATTERNS = [
     sideToWin: 'w',
     line: ['e4', 'e5', 'Bc4', 'Nc6', 'Qh5', 'Nf6', 'Qxf7#'],
     description: 'The four-move mate on f7, the weakest square on the board: queen and bishop double up on f7 before Black completes development. Every player should know both how to spot it and how to defend it.',
+    source: null,
+  },
+  {
+    id: 'queen-king-mate',
+    name: 'Queen and king mate',
+    category: 'endgame',
+    fen: '3k4/8/3K4/8/8/8/8/Q7 w - - 0 1',
+    sideToWin: 'w',
+    line: ['Qa8#'],
+    description: 'The fundamental K+Q vs K technique: with the kings in direct opposition, the queen delivers mate along the rank the defending king is confined to. The whole technique is walking the kings into this exact standoff without stalemating.',
+    source: null,
+  },
+  {
+    id: 'rook-king-mate',
+    name: 'Rook and king mate',
+    category: 'endgame',
+    fen: 'k7/8/8/1K6/8/8/8/7R w - - 0 1',
+    sideToWin: 'w',
+    line: ['Kb6', 'Kb8', 'Rh8#'],
+    description: 'The K+R vs K technique in miniature: the king takes the opposition one square from the edge, shouldering the defender into the only square left, and the rook mates along the back rank. This is the box method every rook endgame reduces to.',
+    source: null,
+  },
+  {
+    id: 'two-bishops-mate',
+    name: 'Two bishops mate',
+    category: 'endgame',
+    fen: 'k7/2K5/6B1/8/3B4/8/8/8 w - - 0 1',
+    sideToWin: 'w',
+    line: ['Be4#'],
+    description: 'K+2B vs K: the bishops cover complementary colors, so between them and the king every square around the cornered king is controlled. One bishop already holds the escape square; the other swings onto the long diagonal to mate.',
+    source: null,
+  },
+  {
+    id: 'bishop-knight-mate',
+    name: 'Bishop and knight mate',
+    category: 'endgame',
+    fen: 'k7/2K5/B1N5/8/8/8/8/8 w - - 0 1',
+    sideToWin: 'w',
+    line: ['Bb7#'],
+    description: "The hardest of the basic mates: the king must be driven into the corner matching the bishop's square color, since the bishop alone can never cover the other corner. Here the knight covers both remaining flight squares and the bishop delivers mate, defended by the king.",
+    source: null,
+  },
+  {
+    id: 'queen-king-mate-black',
+    name: 'Queen and king mate (as Black)',
+    category: 'endgame',
+    fen: 'q7/8/8/8/8/3k4/8/3K4 b - - 0 1',
+    sideToWin: 'b',
+    line: ['Qa1#'],
+    description: 'The same K+Q vs K technique with colors reversed: Black delivers the mate this time. Practicing both sides matters — the winning side in a real game is decided by the position, not by which color you prefer to attack with.',
+    source: null,
+  },
+  {
+    id: 'rook-king-mate-black',
+    name: 'Rook and king mate (as Black)',
+    category: 'endgame',
+    fen: '7r/8/8/8/1k6/8/8/K7 b - - 0 1',
+    sideToWin: 'b',
+    line: ['Kb3', 'Kb1', 'Rh1#'],
+    description: "Black's version of the rook box method: take the opposition, shoulder the white king into the only square left, then mate along the back rank.",
+    source: null,
+  },
+  {
+    id: 'two-bishops-mate-black',
+    name: 'Two bishops mate (as Black)',
+    category: 'endgame',
+    fen: '8/8/8/3b4/8/6b1/2k5/K7 b - - 0 1',
+    sideToWin: 'b',
+    line: ['Be5#'],
+    description: "Black's two bishops, same complementary-color coverage: one already holds a flight square, the other swings onto the long diagonal to deliver mate.",
+    source: null,
+  },
+  {
+    id: 'bishop-knight-mate-black',
+    name: 'Bishop and knight mate (as Black)',
+    category: 'endgame',
+    fen: '8/8/8/8/8/b1n5/2k5/K7 b - - 0 1',
+    sideToWin: 'b',
+    line: ['Bb2#'],
+    description: "Black's hardest basic mate: the white king is already confined to the corner matching Black's bishop, the knight covers the remaining flight squares, and the bishop mates defended by the king.",
     source: null,
   },
 ];

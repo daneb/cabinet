@@ -713,7 +713,6 @@ function App() {
               { key: 'library', label: 'Library' },
               { key: 'insights', label: 'Insights' },
               { key: 'patterns', label: 'Patterns' },
-              { key: 'drills', label: 'Drills' },
             ].map(t => (
               <button
                 key={t.key}
@@ -743,23 +742,13 @@ function App() {
                 settings={reviewSettings}
                 reviewWorker={reviewWorker}
               />
-            ) : activeLeftTab === 'patterns' ? (
+            ) : (
               <window.PatternsPanel
                 onOpenPattern={handleOpenPattern}
                 onDrillPattern={handleDrillPattern}
                 showToast={showToast}
                 progress={patternsProgress}
               />
-            ) : (
-              <div className="drills-placeholder">
-                <div className="rail-label"><span>Drills</span></div>
-                <div className="gr-empty">
-                  Opening drills and middle-game tactics trainers will live here — spaced repetition on your saved lines and patterns.
-                </div>
-                <div style={{ marginTop: 14, fontFamily: 'var(--mono)', fontSize: 11, letterSpacing: '0.06em', color: 'var(--accent)' }}>
-                  COMING SOON
-                </div>
-              </div>
             )}
           </div>
         </aside>
