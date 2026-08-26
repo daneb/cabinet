@@ -1,0 +1,73 @@
+[
+  {
+    "id": "2026-08-26-cbb#1",
+    "run": "2026-08-26-cbb",
+    "spec": "remove-pattern-drill",
+    "signal": {
+      "signal": "gate_check",
+      "gate": "G2",
+      "check": "blast-radius",
+      "verdict": "fail",
+      "expected": "diff ⊆ slices/patterns/**, tests/patterns/**",
+      "actual": "1 outside scope: .gitignore (+5 -0)"
+    },
+    "attribution": "AGENTIC",
+    "class": "scope-creep",
+    "rationale": "`blast-radius` in G2 is a plan failure",
+    "scope": "repo",
+    "evidence": "evidence/diff-stat.txt"
+  },
+  {
+    "id": "2026-08-26-cbb#2",
+    "run": "2026-08-26-cbb",
+    "spec": "remove-pattern-drill",
+    "signal": {
+      "signal": "gate_check",
+      "gate": "G2",
+      "check": "lint",
+      "verdict": "blocked",
+      "actual": "no `lint` command configured — set verify.lint in .keel/keel.toml"
+    },
+    "attribution": "PROCESS",
+    "rationale": "`lint` could not run; a blocked check is an environment fact, not an agent output",
+    "scope": "repo"
+  },
+  {
+    "id": "2026-08-26-cbb#3",
+    "run": "2026-08-26-cbb",
+    "spec": "remove-pattern-drill",
+    "signal": {
+      "signal": "gate_check",
+      "gate": "G2",
+      "check": "test",
+      "verdict": "fail",
+      "expected": "`node --test 'tests/**/*.test.js'` exits 0",
+      "actual": "exited 1"
+    },
+    "attribution": "AGENTIC",
+    "class": "edit-runtime",
+    "rationale": "`test` in G2 is a edit failure",
+    "scope": "dir:tests",
+    "evidence": "evidence/test.txt"
+  },
+  {
+    "id": "2026-08-26-cbb#4",
+    "run": "2026-08-26-cbb",
+    "spec": "remove-pattern-drill",
+    "seq": 7,
+    "signal": {
+      "signal": "command",
+      "cmd": "node --test 'tests/**/*.test.js'",
+      "exit_code": 1
+    },
+    "attribution": "AGENTIC",
+    "class": "edit-runtime",
+    "rationale": "`node` exited 1; a check command failing at run time",
+    "scope": "dir:tests",
+    "recovery": {
+      "kind": "oracle",
+      "summary": "8  oracle         AC-1 pass — `node --test --test-name-pattern \"endgame category is not drillable\" tests/patterns/patterns-data.test.js` exits 0"
+    },
+    "evidence": "evidence/test.txt"
+  }
+]

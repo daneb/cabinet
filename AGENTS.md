@@ -1,4 +1,4 @@
-<!-- keel:generated schema=keel.projection/1 adapter=agents store=24b318faefa8 body=72441317c919 -->
+<!-- keel:generated schema=keel.projection/1 adapter=agents store=fe8e1a3c6ca3 body=9fe13f6d4159 -->
 <!-- Source of truth: .keel/store/ — regenerate with `keel store render`. Edits here are drift and will be reported by `keel store check`. -->
 
 # Project context
@@ -152,12 +152,8 @@ Files are ordered by import-graph centrality, not alphabetically. Signatures onl
 - `function loadSession()`  <sub>L46</sub>
 - `function persistSession(data)`  <sub>L49</sub>
 - `async function loadSavesFromDisk()`  <sub>L53</sub>
-- `async function persistSavesToDisk(saves)`  <sub>L60</sub>
-- `function App()`  <sub>L70</sub>
-- `function PromotionDialog(`  <sub>L1019</sub>
-- `function ChapterPanel(`  <sub>L1040</sub>
 
-_… 209 more lines in `.keel/store/steering/structure.md`._
+_… 213 more lines in `.keel/store/steering/structure.md`._
 
 ## What this is
 
@@ -181,3 +177,7 @@ saves persist to both localStorage and disk (`/api/saves`, `/api/library`).
   accounts, no sync between machines.
 - Opening theory correctness — the engine and the user supply that; Cabinet
   only stores and drills whatever lines are entered.
+
+## Lessons in force
+
+- **L-0001** (repo) — Changes MUST stay inside the scope declared in the spec; widen the scope deliberately before editing.

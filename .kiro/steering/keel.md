@@ -1,4 +1,4 @@
-<!-- keel:generated schema=keel.projection/1 adapter=kiro store=24b318faefa8 body=273901b268b6 -->
+<!-- keel:generated schema=keel.projection/1 adapter=kiro store=fe8e1a3c6ca3 body=60dea31b4434 -->
 <!-- Source of truth: .keel/store/ — regenerate with `keel store render`. Edits here are drift and will be reported by `keel store check`. -->
 
 # Project context
@@ -172,12 +172,8 @@ Files are ordered by import-graph centrality, not alphabetically. Signatures onl
 **`electron/storage.cjs`** · 60 lines · imported by 2
 - `function readJSON(filePath)`  <sub>L6</sub>
 - `function writeJSONAtomic(filePath, data)`  <sub>L10</sub>
-- `function loadIndex(dataDir)` — Load just the index (name + id + updatedAt) — fast, for listing  <sub>L19</sub>
-- `function loadSave(dataDir, id)` — Load a single save's full tree by id  <sub>L24</sub>
-- `function loadAll(dataDir)` — Load all saves with full tree data (for GET /api/saves backward compat)  <sub>L29</sub>
-- `function saveSave(dataDir, save)` — Write one save atomically; update index.json entry  <sub>L35</sub>
 
-_… 189 more lines in `.keel/store/steering/structure.md`._
+_… 193 more lines in `.keel/store/steering/structure.md`._
 
 ## What this is
 
@@ -201,3 +197,7 @@ saves persist to both localStorage and disk (`/api/saves`, `/api/library`).
   accounts, no sync between machines.
 - Opening theory correctness — the engine and the user supply that; Cabinet
   only stores and drills whatever lines are entered.
+
+## Lessons in force
+
+- **L-0001** (repo) — Changes MUST stay inside the scope declared in the spec; widen the scope deliberately before editing.

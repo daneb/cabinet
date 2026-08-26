@@ -1,4 +1,4 @@
-<!-- keel:generated schema=keel.projection/1 adapter=copilot store=24b318faefa8 body=192979501d8e -->
+<!-- keel:generated schema=keel.projection/1 adapter=copilot store=fe8e1a3c6ca3 body=b265b785805f -->
 <!-- Source of truth: .keel/store/ — regenerate with `keel store render`. Edits here are drift and will be reported by `keel store check`. -->
 
 # Project context
@@ -93,11 +93,8 @@ Files are ordered by import-graph centrality, not alphabetically. Signatures onl
 - `tests/game-review/` — 2 files, 265 lines · elo.test.js, features.test.js
 - `tests/insights/` — 1 file, 163 lines · insights.test.js
 - `tests/move-tree/` — 1 file, 462 lines · move-tree.test.js
-- `tests/patterns/` — 1 file, 91 lines · patterns-data.test.js
-- `tests/pgn/` — 2 files, 445 lines · pgn.test.js, parse-all.test.js
 
-
-_… 269 more lines in `.keel/store/steering/structure.md`._
+_… 272 more lines in `.keel/store/steering/structure.md`._
 
 ## What this is
 
@@ -117,7 +114,9 @@ saves persist to both localStorage and disk (`/api/saves`, `/api/library`).
 ### Out of scope
 
 - Multiplayer/online play — this is a solo study tool, not a chess server.
-- Server-side persistence beyond the local Electron/`serve.js` API — no
-  accounts, no sync between machines.
-- Opening theory correctness — the engine and the user supply that; Cabinet
-  only stores and drills whatever lines are entered.
+
+_… 4 more lines in `.keel/store/steering/product.md`._
+
+## Lessons in force
+
+- **L-0001** (repo) — Changes MUST stay inside the scope declared in the spec; widen the scope deliberately before editing.
