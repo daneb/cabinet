@@ -82,6 +82,8 @@ describe('initSync — fresh repo', () => {
       raw: async () => {},
       addConfig: async () => {},
       addRemote: async (name, url) => { ops.push('addRemote'); assert.ok(url.includes('mytoken')); },
+      // No remote main yet, so initSync falls through to the push-initial-commit path.
+      fetch: async () => { throw new Error('no remote branch yet'); },
       add: async () => ops.push('add'),
       commit: async () => ops.push('commit'),
       push: async () => ops.push('push'),
@@ -138,7 +140,7 @@ describe('initSync — existing repo', () => {
 });
 
 describe('pullSync', () => {
-  it('fetches and resets to origin/main', async () => {
+  it('fetches and resets to FETCH_HEAD', async () => {
     const ops = [];
     const resetArgs = [];
     sync._setGitFactory(() => createMockGit({
@@ -152,7 +154,7 @@ describe('pullSync', () => {
     assert.ok(ops.includes('fetch'));
     assert.ok(ops.includes('reset'));
     assert.ok(resetArgs.includes('--hard'));
-    assert.ok(resetArgs.includes('origin/main'));
+    assert.ok(resetArgs.includes('FETCH_HEAD'));
     assert.ok(mockStoreData.github.lastSync);
     assert.equal(mockStoreData.github.lastError, null);
   });
