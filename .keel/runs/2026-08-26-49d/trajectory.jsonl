@@ -1,0 +1,14 @@
+{"t":"2026-08-26T09:16:45.977492+02:00","seq":1,"kind":"run_start","spec":"remove-pattern-drill","keel_version":"0.4.0","store_hash":"24b318faefa8dba44708fecb59b7bb7bdd2220554be7e82c6f363436cb0d0c26"}
+{"t":"2026-08-26T09:16:45.977560+02:00","seq":2,"kind":"inject","source":".keel/store/steering/conventions.md","tokens":253,"bytes":1010}
+{"t":"2026-08-26T09:16:45.977594+02:00","seq":3,"kind":"inject","source":".keel/store/steering/tech.md","tokens":271,"bytes":1081}
+{"t":"2026-08-26T09:16:45.977633+02:00","seq":4,"kind":"inject","source":".keel/store/steering/structure.md","tokens":4231,"bytes":16924}
+{"t":"2026-08-26T09:16:45.977820+02:00","seq":5,"kind":"inject","source":".keel/specs/remove-pattern-drill/spec.md","tokens":657,"bytes":2626}
+{"t":"2026-08-26T09:16:46.052224+02:00","seq":6,"kind":"command","cmd":"node build.cjs","exit_code":0,"evidence":"evidence/build.txt"}
+{"t":"2026-08-26T09:16:46.345572+02:00","seq":7,"kind":"command","cmd":"node --test 'tests/**/*.test.js'","exit_code":0,"evidence":"evidence/test.txt"}
+{"t":"2026-08-26T09:16:46.562502+02:00","seq":8,"kind":"oracle","criterion":"AC-1","oracle":"`node --test --test-name-pattern \"endgame category is not drillable\" tests/patterns/patterns-data.test.js` exits 0","verdict":"pass","exit_code":0}
+{"t":"2026-08-26T09:16:46.562528+02:00","seq":9,"kind":"oracle","criterion":"AC-2","oracle":"`node --test --test-name-pattern \"mate category is not drillable\" tests/patterns/patterns-data.test.js` exits 0","verdict":"pass","exit_code":0}
+{"t":"2026-08-26T09:16:46.562533+02:00","seq":10,"kind":"oracle","criterion":"AC-3","oracle":"human: a reviewer opens the Patterns panel in the running app, expands","verdict":"human"}
+{"t":"2026-08-26T09:16:46.677694+02:00","seq":11,"kind":"gate","gate":"G2","verdict":"blocked","result":"gates/G2.json"}
+{"t":"2026-08-26T09:16:46.703273+02:00","seq":12,"kind":"gate","gate":"G2.5","verdict":"pass","result":"gates/G2.5.json"}
+{"t":"2026-08-26T09:16:46.715516+02:00","seq":13,"kind":"gate","gate":"G3","verdict":"blocked","result":"gates/G3.json"}
+{"t":"2026-08-26T09:16:46.715542+02:00","seq":14,"kind":"run_end","verdict":"blocked","duration_ms":748}

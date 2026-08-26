@@ -10,3 +10,4 @@
 {"t":"2026-08-26T09:13:08.110976+02:00","seq":10,"kind":"oracle","criterion":"AC-3","oracle":"human: a reviewer opens the Patterns panel in the running app, expands","verdict":"human"}
 {"t":"2026-08-26T09:13:08.232994+02:00","seq":11,"kind":"gate","gate":"G2","verdict":"fail","result":"gates/G2.json"}
 {"t":"2026-08-26T09:13:08.233041+02:00","seq":12,"kind":"run_end","verdict":"fail","duration_ms":822}
+{"t":"2026-08-26T09:16:36.374051+02:00","seq":13,"kind":"human","stage":"merge","decision":"approved","by":"Dane Balia"}

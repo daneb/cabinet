@@ -32,6 +32,16 @@ describe('patterns dataset shape', () => {
   });
 });
 
+describe('pattern category drillability', () => {
+  it('endgame category is not drillable', () => {
+    assert.equal(CATEGORIES.find(c => c.id === 'endgame').drillable, false);
+  });
+
+  it('mate category is not drillable', () => {
+    assert.equal(CATEGORIES.find(c => c.id === 'mate').drillable, false);
+  });
+});
+
 describe('patterns positions are valid', () => {
   for (const p of PATTERNS) {
     it(`${p.id}: FEN is sane`, () => {

@@ -1,0 +1,12 @@
+{"t":"2026-08-26T09:15:43.373028+02:00","seq":1,"kind":"run_start","spec":"remove-pattern-drill","keel_version":"0.4.0","store_hash":"24b318faefa8dba44708fecb59b7bb7bdd2220554be7e82c6f363436cb0d0c26"}
+{"t":"2026-08-26T09:15:43.373088+02:00","seq":2,"kind":"inject","source":".keel/store/steering/conventions.md","tokens":253,"bytes":1010}
+{"t":"2026-08-26T09:15:43.373115+02:00","seq":3,"kind":"inject","source":".keel/store/steering/tech.md","tokens":271,"bytes":1081}
+{"t":"2026-08-26T09:15:43.373149+02:00","seq":4,"kind":"inject","source":".keel/store/steering/structure.md","tokens":4231,"bytes":16924}
+{"t":"2026-08-26T09:15:43.373270+02:00","seq":5,"kind":"inject","source":".keel/specs/remove-pattern-drill/spec.md","tokens":657,"bytes":2626}
+{"t":"2026-08-26T09:15:43.454508+02:00","seq":6,"kind":"command","cmd":"node build.cjs","exit_code":0,"evidence":"evidence/build.txt"}
+{"t":"2026-08-26T09:15:43.735564+02:00","seq":7,"kind":"command","cmd":"node --test 'tests/**/*.test.js'","exit_code":0,"evidence":"evidence/test.txt"}
+{"t":"2026-08-26T09:15:43.951865+02:00","seq":8,"kind":"oracle","criterion":"AC-1","oracle":"`node --test --test-name-pattern \"endgame category is not drillable\" tests/patterns/patterns-data.test.js` exits 0","verdict":"pass","exit_code":0}
+{"t":"2026-08-26T09:15:43.951891+02:00","seq":9,"kind":"oracle","criterion":"AC-2","oracle":"`node --test --test-name-pattern \"mate category is not drillable\" tests/patterns/patterns-data.test.js` exits 0","verdict":"pass","exit_code":0}
+{"t":"2026-08-26T09:15:43.951895+02:00","seq":10,"kind":"oracle","criterion":"AC-3","oracle":"human: a reviewer opens the Patterns panel in the running app, expands","verdict":"human"}
+{"t":"2026-08-26T09:15:44.066274+02:00","seq":11,"kind":"gate","gate":"G2","verdict":"fail","result":"gates/G2.json"}
+{"t":"2026-08-26T09:15:44.066320+02:00","seq":12,"kind":"run_end","verdict":"fail","duration_ms":738}

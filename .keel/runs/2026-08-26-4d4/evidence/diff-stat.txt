@@ -1,0 +1,18 @@
+     2      0  .keel/runs/2026-08-26-4d4/evidence/build.txt
+    33      0  .keel/runs/2026-08-26-4d4/evidence/oracles.json
+   437      0  .keel/runs/2026-08-26-4d4/evidence/test.txt
+     9      0  .keel/runs/2026-08-26-4d4/run.json
+    10      0  .keel/runs/2026-08-26-4d4/trajectory.jsonl
+     2      0  .keel/runs/2026-08-26-c27/evidence/build.txt
+    55      0  .keel/runs/2026-08-26-c27/evidence/diff-stat.txt
+    33      0  .keel/runs/2026-08-26-c27/evidence/oracles.json
+     8      0  .keel/runs/2026-08-26-c27/evidence/ratchet.json
+   437      0  .keel/runs/2026-08-26-c27/evidence/test.txt
+    62      0  .keel/runs/2026-08-26-c27/gates/G2.json
+    11      0  .keel/runs/2026-08-26-c27/run.json
+    12      0  .keel/runs/2026-08-26-c27/trajectory.jsonl
+     2      2  slices/patterns/patterns-data.js
+    10      7  slices/patterns/patterns-panel.jsx
+    10      0  tests/patterns/patterns-data.test.js
+
+16 file(s), +1133 -9 (1142 lines of churn) against 7af8cd728de0e7b8bf8ae1f09e3b62dc9b4be5eb

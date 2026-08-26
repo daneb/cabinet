@@ -1,0 +1,33 @@
+{
+  "runs": [
+    {
+      "criterion": "AC-1",
+      "kind": "cmd",
+      "oracle": "`node --test --test-name-pattern \"endgame category is not drillable\" tests/patterns/patterns-data.test.js` exits 0",
+      "outcome": "pass",
+      "exit_code": 0,
+      "output": "▶ pattern category drillability\n  ✔ endgame category is not drillable (0.266833ms)\n✔ pattern category drillability (0.687291ms)\nℹ tests 1\nℹ suites 1\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 60.39025"
+    },
+    {
+      "criterion": "AC-2",
+      "kind": "cmd",
+      "oracle": "`node --test --test-name-pattern \"mate category is not drillable\" tests/patterns/patterns-data.test.js` exits 0",
+      "outcome": "pass",
+      "exit_code": 0,
+      "output": "▶ pattern category drillability\n  ✔ mate category is not drillable (0.274292ms)\n✔ pattern category drillability (0.788375ms)\nℹ tests 1\nℹ suites 1\nℹ pass 1\nℹ fail 0\nℹ cancelled 0\nℹ skipped 0\nℹ todo 0\nℹ duration_ms 59.684833"
+    },
+    {
+      "criterion": "AC-3",
+      "kind": "human",
+      "oracle": "human: a reviewer opens the Patterns panel in the running app, expands",
+      "outcome": "human",
+      "detail": "a reviewer opens the Patterns panel in the running app, expands"
+    }
+  ],
+  "criteria": 3,
+  "executed": 2,
+  "passed": 2,
+  "failed": 0,
+  "blocked": 0,
+  "human": 1
+}

@@ -13,8 +13,8 @@
 const START_FEN = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
 const CATEGORIES = [
-  { id: 'mate', label: 'Checkmate patterns' },
-  { id: 'endgame', label: 'Endgame technique' },
+  { id: 'mate', label: 'Checkmate patterns', drillable: false },
+  { id: 'endgame', label: 'Endgame technique', drillable: false },
 ];
 
 const PATTERNS = [

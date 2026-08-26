@@ -1,0 +1,62 @@
+{
+  "schema": "keel.gate/1",
+  "gate": "G2",
+  "run": "2026-08-26-648",
+  "spec": "remove-pattern-drill",
+  "verdict": "fail",
+  "generated_at": "2026-08-26T09:15:44.066213+02:00",
+  "checks": [
+    {
+      "id": "build",
+      "verdict": "pass",
+      "detail": "`node build.cjs` exited 0",
+      "evidence": "evidence/build.txt"
+    },
+    {
+      "id": "test",
+      "verdict": "pass",
+      "detail": "`node --test 'tests/**/*.test.js'` exited 0",
+      "evidence": "evidence/test.txt"
+    },
+    {
+      "id": "lint",
+      "verdict": "blocked",
+      "detail": "no `lint` command configured — set verify.lint in .keel/keel.toml"
+    },
+    {
+      "id": "oracle-coverage",
+      "verdict": "pass",
+      "detail": "2/3 oracles pass (1 awaiting human judgement)",
+      "evidence": "evidence/oracles.json"
+    },
+    {
+      "id": "blast-radius",
+      "verdict": "fail",
+      "expected": "diff ⊆ slices/patterns/**, tests/patterns/**",
+      "actual": "2 outside scope: .gitignore (+5 -0), tests/sync.test.js (+4 -2)",
+      "evidence": "evidence/diff-stat.txt"
+    },
+    {
+      "id": "line-budget",
+      "verdict": "pass",
+      "detail": "42/120 lines of churn",
+      "evidence": "evidence/diff-stat.txt"
+    },
+    {
+      "id": "baseline-ratchet",
+      "verdict": "pass",
+      "detail": "1 metric(s) held",
+      "evidence": "evidence/ratchet.json"
+    },
+    {
+      "id": "store-drift",
+      "verdict": "pass",
+      "detail": "4 projections current"
+    },
+    {
+      "id": "shared-stores",
+      "verdict": "pass",
+      "detail": "none configured"
+    }
+  ]
+}

@@ -1,0 +1,437 @@
+$ node --test 'tests/**/*.test.js'
+
+▶ en passant
+  ✔ e4 sets enPassant to e3 (0.531291ms)
+  ✔ single-step pawn does not set enPassant (0.054833ms)
+  ✔ en passant capture removes the captured pawn (0.089292ms)
+✔ en passant (1.196708ms)
+▶ castling
+  ✔ white castles kingside: king on g1, rook on f1 (0.116208ms)
+  ✔ castling rights drop K and Q after white castles kingside (0.063833ms)
+  ✔ moving h1 rook removes K castling right (0.050959ms)
+✔ castling (0.306209ms)
+▶ promotion
+  ✔ promotes to queen by default when option is q (1.8615ms)
+  ✔ promotes to knight (0.200459ms)
+  ✔ promotes to rook (0.130459ms)
+✔ promotion (2.599667ms)
+▶ halfmove clock
+  ✔ resets on pawn move (0.324625ms)
+  ✔ increments on quiet piece move (0.09725ms)
+  ✔ resets on capture (0.0975ms)
+✔ halfmove clock (0.635167ms)
+▶ fullmove counter
+  ✔ increments after black moves (0.147792ms)
+✔ fullmove counter (0.2085ms)
+▶ stateToFEN
+  ✔ round-trips START_STATE (1.196292ms)
+  ✔ fromFEN → stateToFEN is identity for all five perft positions (0.282167ms)
+  ✔ reflects en passant square (0.479666ms)
+  ✔ reflects updated castling rights after king moves (0.167583ms)
+✔ stateToFEN (3.47175ms)
+▶ fromFEN
+  ✔ parses start position (0.160417ms)
+  ✔ parses en passant square correctly (0.103875ms)
+  ✔ parses no castling rights (0.088958ms)
+✔ fromFEN (0.548541ms)
+▶ perft: start
+  ✔ depth 1 (1.084ms)
+  ✔ depth 2 (11.276ms)
+✔ perft: start (12.956458ms)
+▶ perft: kiwipete
+  ✔ depth 1 (1.102917ms)
+  ✔ depth 2 (13.695791ms)
+✔ perft: kiwipete (14.94875ms)
+▶ perft: position3
+  ✔ depth 1 (0.133ms)
+  ✔ depth 2 (7.652375ms)
+✔ perft: position3 (7.885625ms)
+▶ perft: position4
+  ✔ depth 1 (0.175125ms)
+  ✔ depth 2 (14.207834ms)
+✔ perft: position4 (14.479083ms)
+▶ perft: position5
+  ✔ depth 1 (1.223292ms)
+  ✔ depth 2 (14.016208ms)
+✔ perft: position5 (15.299416ms)
+▶ toSAN — pawn moves
+  ✔ e4 from start (0.662667ms)
+  ✔ e3 from start (0.081083ms)
+  ✔ pawn capture includes file (0.083ms)
+  ✔ promotion to queen (0.089208ms)
+  ✔ promotion with check (0.215416ms)
+✔ toSAN — pawn moves (1.692625ms)
+▶ toSAN — piece moves
+  ✔ Nf3 from start (1.857042ms)
+  ✔ castles kingside O-O (0.192291ms)
+  ✔ castles queenside O-O-O (0.160541ms)
+✔ toSAN — piece moves (2.437542ms)
+▶ toSAN — check and checkmate suffixes
+  ✔ check adds + (0.784042ms)
+  ✔ checkmate adds # (1.622791ms)
+✔ toSAN — check and checkmate suffixes (2.631542ms)
+▶ toSAN — disambiguation
+  ✔ two rooks on same file: disambiguate by rank (4.841208ms)
+  ✔ two rooks on same rank: disambiguate by file (0.371083ms)
+✔ toSAN — disambiguation (5.303375ms)
+▶ acplToRating
+  ✔ is monotone decreasing over the table (0.462542ms)
+  ✔ clamps at both ends (0.060583ms)
+  ✔ interpolates between anchors (0.045208ms)
+✔ acplToRating (1.125667ms)
+▶ estimateGame
+  ✔ returns null with fewer than 20 scored moves (0.099917ms)
+  ✔ estimates from the side's own moves only (0.060542ms)
+✔ estimateGame (0.218709ms)
+▶ estimateAggregate
+  ✔ narrows the band with more games but floors at 150 (0.157458ms)
+  ✔ excludes games with too few moves (0.058958ms)
+  ✔ returns null when nothing qualifies (0.0465ms)
+  ✔ formats with band and game count (0.06175ms)
+✔ estimateAggregate (0.414459ms)
+▶ phaseOf
+  ✔ start position is opening (1.142333ms)
+  ✔ past ply 20 is middlegame even with full material (0.084584ms)
+  ✔ king-and-pawn boards are endgame (0.059459ms)
+  ✔ six or fewer pieces is endgame regardless of ply (0.052167ms)
+✔ phaseOf (2.524583ms)
+▶ situationOf
+  ✔ flips perspective for black (0.072917ms)
+  ✔ buckets around the thresholds (0.039625ms)
+✔ situationOf (0.173708ms)
+▶ moveFeatures
+  ✔ tags pawn moves and captures (0.139333ms)
+✔ moveFeatures (0.193708ms)
+▶ motifsFor
+  ✔ missedWin: winning eval collapses to nothing (0.123166ms)
+  ✔ missedMate: mate-for-mover disappears (0.045167ms)
+  ✔ hungPiece: best reply captures the moved piece (0.062833ms)
+  ✔ collapse: mistake while already worse (0.041417ms)
+  ✔ no motifs on a quiet good move (0.582709ms)
+✔ motifsFor (0.950417ms)
+▶ gameOutcomeMotifs
+  ✔ failedConversion: was winning, did not win (0.088125ms)
+  ✔ defence flags for the side that was lost (0.031416ms)
+  ✔ unknown result yields nothing (0.029042ms)
+✔ gameOutcomeMotifs (0.197083ms)
+▶ sideScore
+  ✔ maps results to scores (0.272375ms)
+✔ sideScore (3.1735ms)
+▶ openingKey
+  ✔ joins the first 8 plies (0.135292ms)
+✔ openingKey (0.203583ms)
+▶ tagMoves — end to end on a real line
+  ✔ tags every mainline move with class, phase, situation (0.617042ms)
+✔ tagMoves — end to end on a real line (0.68075ms)
+▶ eligibleRecords
+  ✔ excludes unreviewed, mismatched-engine, no-side, and opted-out records (1.380917ms)
+✔ eligibleRecords (2.0635ms)
+▶ aggregate
+  ✔ computes per-phase error rates from user moves only (0.530083ms)
+  ✔ marks small cells lowSample and keeps them out of findings (0.824417ms)
+  ✔ surfaces a large-sample deviation as a finding (0.180625ms)
+  ✔ tracks conversion and defence per game (0.11825ms)
+  ✔ groups openings and computes score/accuracy per bucket (0.172959ms)
+  ✔ includes an aggregate Elo estimate (0.085583ms)
+  ✔ counts motifs across games (0.110042ms)
+✔ aggregate (2.20775ms)
+▶ createTree
+  ✔ produces a valid root node (5.301208ms)
+  ✔ populates byFen with root position (0.097459ms)
+✔ createTree (6.450667ms)
+▶ playMove
+  ✔ appends a new child as last sibling (0.422417ms)
+  ✔ returns existing child when SAN matches (0.122292ms)
+  ✔ never overwrites siblings — e4 stays at [0], d4 added at [1] (0.144ms)
+  ✔ applies promotion correctly (0.581875ms)
+  ✔ captures set captured field (0.555125ms)
+✔ playMove (1.950084ms)
+▶ promoteToMainline
+  ✔ reorders childIds so the promoted branch is first (0.139959ms)
+  ✔ promotes at multiple levels (0.123375ms)
+✔ promoteToMainline (0.352959ms)
+▶ deleteSubtree
+  ✔ removes a node and all descendants from nodes and byFen (0.240042ms)
+  ✔ is a no-op on root (0.037958ms)
+  ✔ prunes childIds references in parent (2.111416ms)
+✔ deleteSubtree (2.468042ms)
+▶ walkMainline
+  ✔ returns root-to-leaf chain following childIds[0] (0.698417ms)
+  ✔ starts from given node (0.175083ms)
+✔ walkMainline (0.971333ms)
+▶ pathToRoot
+  ✔ returns root-first array from any node (0.21025ms)
+✔ pathToRoot (0.29775ms)
+▶ fenKey
+  ✔ strips halfmove and fullmove clocks (0.062834ms)
+  ✔ preserves castling rights and en passant (0.079625ms)
+  ✔ different positions have different keys (0.049ms)
+✔ fenKey (0.232459ms)
+▶ buildFenIndex
+  ✔ produces correct byFen map (0.120583ms)
+  ✔ groups transpositions under same key (0.17875ms)
+✔ buildFenIndex (0.324458ms)
+▶ migrateV1toV2
+  ✔ losslessly converts a linear v1 history to a v2 tree (0.159916ms)
+✔ migrateV1toV2 (0.178375ms)
+▶ markStatus
+  ✔ sets status only (0.050667ms)
+✔ markStatus (0.075959ms)
+▶ visitNode
+  ✔ transitions unseen → reviewing and sets lastSeenAt (0.049542ms)
+  ✔ bumps lastSeenAt but keeps known status (0.03ms)
+✔ visitNode (0.103667ms)
+▶ recordDrillResult
+  ✔ records success: reviewCount incremented, status → reviewing (0.054334ms)
+  ✔ promotes to known after 3 successes (0.033708ms)
+  ✔ drops to reviewing on failure (0.026333ms)
+✔ recordDrillResult (0.139625ms)
+▶ applyDecay
+  ✔ decays known nodes not drilled in >30 days (0.055708ms)
+  ✔ leaves recently drilled known nodes alone (0.032084ms)
+✔ applyDecay (0.107417ms)
+▶ nodeCount and mainlineDepth
+  ✔ returns correct counts (0.072542ms)
+✔ nodeCount and mainlineDepth (0.087125ms)
+▶ patterns dataset shape
+  ✔ has exactly 33 entries (0.464125ms)
+  ✔ has unique ids (0.075208ms)
+  ✔ every entry has the required fields (0.208833ms)
+✔ patterns dataset shape (1.65275ms)
+▶ pattern category drillability
+  ✔ endgame category is not drillable (0.081291ms)
+  ✔ mate category is not drillable (0.039791ms)
+✔ pattern category drillability (0.179042ms)
+▶ patterns positions are valid
+  ✔ back-rank-mate: FEN is sane (0.337416ms)
+  ✔ smothered-mate: FEN is sane (0.073333ms)
+  ✔ anastasias-mate: FEN is sane (0.072625ms)
+  ✔ bodens-mate: FEN is sane (0.052084ms)
+  ✔ arabian-mate: FEN is sane (0.070958ms)
+  ✔ anderssens-mate: FEN is sane (0.046125ms)
+  ✔ opera-mate: FEN is sane (0.044666ms)
+  ✔ epaulette-mate: FEN is sane (0.034792ms)
+  ✔ dovetail-mate: FEN is sane (0.03975ms)
+  ✔ swallows-tail-mate: FEN is sane (0.041125ms)
+  ✔ hook-mate: FEN is sane (0.051666ms)
+  ✔ ladder-mate: FEN is sane (0.037792ms)
+  ✔ legals-mate: FEN is sane (0.033958ms)
+  ✔ blackburnes-mate: FEN is sane (0.0335ms)
+  ✔ damianos-mate: FEN is sane (0.031875ms)
+  ✔ lollis-mate: FEN is sane (0.033208ms)
+  ✔ pillsburys-mate: FEN is sane (0.035ms)
+  ✔ morphys-mate: FEN is sane (0.034292ms)
+  ✔ retis-mate: FEN is sane (0.821792ms)
+  ✔ grecos-mate: FEN is sane (0.037416ms)
+  ✔ corner-mate: FEN is sane (0.03325ms)
+  ✔ vukovic-mate: FEN is sane (0.034375ms)
+  ✔ suffocation-mate: FEN is sane (0.030625ms)
+  ✔ blind-swine-mate: FEN is sane (0.029458ms)
+  ✔ scholars-mate: FEN is sane (0.033167ms)
+  ✔ queen-king-mate: FEN is sane (0.03ms)
+  ✔ rook-king-mate: FEN is sane (0.029458ms)
+  ✔ two-bishops-mate: FEN is sane (0.028667ms)
+  ✔ bishop-knight-mate: FEN is sane (0.028333ms)
+  ✔ queen-king-mate-black: FEN is sane (0.029333ms)
+  ✔ rook-king-mate-black: FEN is sane (0.034708ms)
+  ✔ two-bishops-mate-black: FEN is sane (0.031875ms)
+  ✔ bishop-knight-mate-black: FEN is sane (0.031583ms)
+✔ patterns positions are valid (2.7145ms)
+▶ patterns lines are legal and end in verified mate
+  ✔ back-rank-mate: Re8# (1.135208ms)
+  ✔ smothered-mate: Qb3+ Kh8 Nf7+ Kg8 Nh6+ Kh8 Qg8+ Rxg8 Nf7# (6.383625ms)
+  ✔ anastasias-mate: Ne7+ Kh8 Qxh7+ Kxh7 Rh3# (4.338167ms)
+  ✔ bodens-mate: Qxc6+ bxc6 Ba6# (1.358084ms)
+  ✔ arabian-mate: Rh7# (0.169917ms)
+  ✔ anderssens-mate: Rh8# (0.320625ms)
+  ✔ opera-mate: Qb8+ Nxb8 Rd8# (2.199125ms)
+  ✔ epaulette-mate: Qe6# (0.381292ms)
+  ✔ dovetail-mate: Qe5# (0.376667ms)
+  ✔ swallows-tail-mate: Qe5# (0.800959ms)
+  ✔ hook-mate: Re8# (0.526416ms)
+  ✔ ladder-mate: Rh6+ Kd7 Rg7+ Kd8 Rh8# (0.877209ms)
+  ✔ legals-mate: e4 e5 Nf3 d6 Bc4 Bg4 Nc3 g6 Nxe5 Bxd1 Bxf7+ Ke7 Nd5# (4.156042ms)
+  ✔ blackburnes-mate: Bh7# (0.374167ms)
+  ✔ damianos-mate: Qh7# (0.2755ms)
+  ✔ lollis-mate: Qg7# (0.210458ms)
+  ✔ pillsburys-mate: Rg1# (0.854792ms)
+  ✔ morphys-mate: Bf6# (1.192083ms)
+  ✔ retis-mate: Qd8+ Kxd8 Bg5+ Kc7 Bd8# (2.257333ms)
+  ✔ grecos-mate: Rh1# (0.223916ms)
+  ✔ corner-mate: Nf7# (0.297333ms)
+  ✔ vukovic-mate: Rd8# (0.511583ms)
+  ✔ suffocation-mate: Nf7# (0.277833ms)
+  ✔ blind-swine-mate: Rg7+ Kh8 Rxh7+ Kg8 Rbg7# (1.243625ms)
+  ✔ scholars-mate: e4 e5 Bc4 Nc6 Qh5 Nf6 Qxf7# (1.551625ms)
+  ✔ queen-king-mate: Qa8# (0.116333ms)
+  ✔ rook-king-mate: Kb6 Kb8 Rh8# (0.137708ms)
+  ✔ two-bishops-mate: Be4# (0.315416ms)
+  ✔ bishop-knight-mate: Bb7# (0.088292ms)
+  ✔ queen-king-mate-black: Qa1# (0.102917ms)
+  ✔ rook-king-mate-black: Kb3 Kb1 Rh1# (0.149042ms)
+  ✔ two-bishops-mate-black: Be5# (0.093334ms)
+  ✔ bishop-knight-mate-black: Bb2# (0.076166ms)
+✔ patterns lines are legal and end in verified mate (34.493917ms)
+▶ buildTree
+  ✔ back-rank-mate: builds a tree matching the line (0.390042ms)
+  ✔ smothered-mate: builds a tree matching the line (1.107667ms)
+  ✔ anastasias-mate: builds a tree matching the line (0.502792ms)
+  ✔ bodens-mate: builds a tree matching the line (0.274167ms)
+  ✔ arabian-mate: builds a tree matching the line (0.105834ms)
+  ✔ anderssens-mate: builds a tree matching the line (0.104541ms)
+  ✔ opera-mate: builds a tree matching the line (0.456917ms)
+  ✔ epaulette-mate: builds a tree matching the line (0.256583ms)
+  ✔ dovetail-mate: builds a tree matching the line (0.142042ms)
+  ✔ swallows-tail-mate: builds a tree matching the line (0.127625ms)
+  ✔ hook-mate: builds a tree matching the line (0.1165ms)
+  ✔ ladder-mate: builds a tree matching the line (0.586667ms)
+  ✔ legals-mate: builds a tree matching the line (2.07475ms)
+  ✔ blackburnes-mate: builds a tree matching the line (0.153083ms)
+  ✔ damianos-mate: builds a tree matching the line (0.123667ms)
+  ✔ lollis-mate: builds a tree matching the line (0.514541ms)
+  ✔ pillsburys-mate: builds a tree matching the line (0.569583ms)
+  ✔ morphys-mate: builds a tree matching the line (0.287584ms)
+  ✔ retis-mate: builds a tree matching the line (1.953459ms)
+  ✔ grecos-mate: builds a tree matching the line (0.427583ms)
+  ✔ corner-mate: builds a tree matching the line (0.299792ms)
+  ✔ vukovic-mate: builds a tree matching the line (0.281916ms)
+  ✔ suffocation-mate: builds a tree matching the line (0.236ms)
+  ✔ blind-swine-mate: builds a tree matching the line (2.622833ms)
+  ✔ scholars-mate: builds a tree matching the line (1.670167ms)
+  ✔ queen-king-mate: builds a tree matching the line (0.121083ms)
+  ✔ rook-king-mate: builds a tree matching the line (0.142709ms)
+  ✔ two-bishops-mate: builds a tree matching the line (0.08925ms)
+  ✔ bishop-knight-mate: builds a tree matching the line (0.076667ms)
+  ✔ queen-king-mate-black: builds a tree matching the line (0.091833ms)
+  ✔ rook-king-mate-black: builds a tree matching the line (0.138625ms)
+  ✔ two-bishops-mate-black: builds a tree matching the line (0.467375ms)
+  ✔ bishop-knight-mate-black: builds a tree matching the line (0.132625ms)
+✔ buildTree (17.20975ms)
+▶ PGN splitGames
+  ✔ splits a two-game file into two chunks (0.560375ms)
+  ✔ returns a single chunk for a single game (0.05625ms)
+  ✔ handles empty input (0.579167ms)
+  ✔ handles a game with no headers at all (0.044292ms)
+✔ PGN splitGames (1.813583ms)
+▶ PGN parseAll
+  ✔ parses each game with its own headers (no header merge) (4.630333ms)
+  ✔ parses each game to its own tree (2.069458ms)
+  ✔ preserves variations and comments within each game (0.882209ms)
+  ✔ carries per-game warnings independently (0.949166ms)
+✔ PGN parseAll (8.666458ms)
+▶ PGN parse — bare game
+  ✔ parses a simple game into a tree (3.508917ms)
+  ✔ parses without headers (1.402125ms)
+✔ PGN parse — bare game (5.555583ms)
+▶ PGN parse — variations
+  ✔ parses a single variation (0.963167ms)
+  ✔ parses nested variations (2.673333ms)
+  ✔ handles deeply nested variations 3 deep (2.450375ms)
+✔ PGN parse — variations (6.212959ms)
+▶ PGN parse — NAGs
+  ✔ parses numeric NAGs (0.375542ms)
+  ✔ parses shorthand NAGs inline (0.97225ms)
+✔ PGN parse — NAGs (1.436042ms)
+▶ PGN parse — comments
+  ✔ attaches comments to the correct node (0.361584ms)
+  ✔ handles comment before first move (game comment on root) (0.171875ms)
+  ✔ handles comment after NAG (0.18575ms)
+✔ PGN parse — comments (0.783333ms)
+▶ PGN parse — promotions
+  ✔ parses pawn promotion (0.297584ms)
+✔ PGN parse — promotions (0.326708ms)
+▶ PGN parse — FEN header
+  ✔ starts from the position specified in FEN header (1.423ms)
+✔ PGN parse — FEN header (1.456333ms)
+▶ PGN parse — error handling
+  ✔ warns on illegal move when allowIllegal is true (1.176375ms)
+  ✔ returns error on illegal move by default (0.522417ms)
+✔ PGN parse — error handling (2.207667ms)
+▶ PGN round-trip
+  ✔ serializes and re-parses to an equivalent tree (3.342042ms)
+  ✔ bare game round-trips (2.126708ms)
+  ✔ preserves headers on round-trip (2.231833ms)
+✔ PGN round-trip (7.771333ms)
+▶ PGN serialize
+  ✔ emits bare game correctly (0.685291ms)
+  ✔ emits variations in parentheses (0.413333ms)
+  ✔ emits NAGs as $NNN (0.246208ms)
+  ✔ emits comments in braces (0.116083ms)
+✔ PGN serialize (1.513125ms)
+▶ PGN chapter tags
+  ✔ extracts Chapter tag from comment (0.231708ms)
+  ✔ extracts Section tag from comment (0.195209ms)
+  ✔ tags the correct node when comment follows a move (0.216625ms)
+✔ PGN chapter tags (0.681375ms)
+[migrate] Migrated 2 save(s) to per-file storage
+[migrate] Migrated 1 save(s) to per-file storage
+[migrate] Migration failed, falling back to saves.json: Unexpected token 'o', "not json {{{" is not valid JSON
+[migrate] Migrated 2 save(s) to per-file storage
+▶ migrate
+  ✔ produces index.json and per-file saves from saves.json (3.402ms)
+  ✔ is idempotent — safe to run twice (1.70325ms)
+  ✔ skips when no saves.json (fresh install) (0.247083ms)
+  ✔ returns { ok: false } and leaves saves.json intact on parse error (0.572292ms)
+✔ migrate (6.497375ms)
+▶ loadIndex
+  ✔ returns empty array when index.json missing (0.277833ms)
+  ✔ returns only metadata — not tree data (0.336334ms)
+✔ loadIndex (0.670083ms)
+▶ saveSave
+  ✔ writes save file and creates index entry (0.692875ms)
+  ✔ updates existing index entry on re-save (0.926625ms)
+  ✔ write is atomic — uses tmp then rename (0.664917ms)
+  ✔ multiple saves accumulate in index (1.0125ms)
+✔ saveSave (3.391375ms)
+▶ deleteSave
+  ✔ removes save file and index entry (1.127333ms)
+  ✔ is safe when id does not exist (0.769167ms)
+✔ deleteSave (1.931417ms)
+▶ round-trip
+  ✔ save then loadSave returns identical data (0.64725ms)
+  ✔ loadAll returns all saves with full tree data (0.961084ms)
+  ✔ loadAll returns [] with no data (0.166625ms)
+  ✔ round-trip through migrate then loadAll (1.171834ms)
+✔ round-trip (3.003417ms)
+▶ getStatus
+  ✔ returns disabled defaults when nothing configured (0.523208ms)
+  ✔ reflects stored config (0.088125ms)
+✔ getStatus (1.136584ms)
+▶ disconnect
+  ✔ clears enabled flag and preserves bannerDismissed (0.094625ms)
+✔ disconnect (0.156708ms)
+▶ commitMsg
+  ✔ produces the expected format (1.146458ms)
+✔ commitMsg (1.243959ms)
+▶ initSync — fresh repo
+  ✔ calls init, addRemote, add, commit, push (0.860666ms)
+✔ initSync — fresh repo (1.0125ms)
+▶ initSync — existing repo
+  ✔ sets remote URL and pulls (0.2075ms)
+  ✔ adds remote when none exists (0.121709ms)
+✔ initSync — existing repo (0.397ms)
+▶ pullSync
+  ✔ fetches and resets to FETCH_HEAD (0.088292ms)
+  ✔ sets lastError on failure (0.147792ms)
+✔ pullSync (0.30675ms)
+▶ commitAndPush
+  ✔ stages all data files with git add ., commits, and pushes (0.172625ms)
+  ✔ ignores "nothing to commit" error (0.09275ms)
+  ✔ recovers from non-fast-forward push rejection (0.112833ms)
+  ✔ records lastError when push ultimately fails (0.169125ms)
+  ✔ uses provided message or generates one (0.094459ms)
+✔ commitAndPush (0.692541ms)
+▶ version alignment
+  ✔ package.json has a valid semver version (0.471375ms)
+  ✔ package.json version matches the electron build productName config (0.073167ms)
+  ✔ app.getVersion() aligns with package.json and is passed to setAboutPanelOptions (0.866041ms)
+  ✔ main.cjs calls setAboutPanelOptions with app.getVersion() (0.289375ms)
+✔ version alignment (2.40675ms)
+ℹ tests 277
+ℹ suites 73
+ℹ pass 277
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 235.171875

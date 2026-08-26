@@ -39,6 +39,7 @@ function PatternsPanel({ onOpenPattern, onDrillPattern, showToast, progress }) {
       {window.Patterns.CATEGORIES.map(cat => {
         const items = window.Patterns.PATTERNS.filter(p => p.category === cat.id);
         if (items.length === 0) return null;
+        const drillable = cat.drillable !== false;
         const open = !!openCategories[cat.id];
         return (
           <div key={cat.id}>
@@ -90,13 +91,15 @@ function PatternsPanel({ onOpenPattern, onDrillPattern, showToast, progress }) {
                       >
                         View
                       </button>
-                      <button
-                        className="btn btn-ghost"
-                        style={{ fontSize: 11, padding: '2px 8px' }}
-                        onClick={(e) => { e.stopPropagation(); handleDrill(p); }}
-                      >
-                        Drill
-                      </button>
+                      {drillable ? (
+                        <button
+                          className="btn btn-ghost"
+                          style={{ fontSize: 11, padding: '2px 8px' }}
+                          onClick={(e) => { e.stopPropagation(); handleDrill(p); }}
+                        >
+                          Drill
+                        </button>
+                      ) : null}
                     </div>
                   </div>
                   );
