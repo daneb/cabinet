@@ -1,0 +1,11 @@
+{
+  "schema": "keel.run/1",
+  "id": "2026-08-26-cbb",
+  "spec": "remove-pattern-drill",
+  "keel_version": "0.4.0",
+  "store_hash": "24b318faefa8dba44708fecb59b7bb7bdd2220554be7e82c6f363436cb0d0c26",
+  "started_at": "2026-08-26T09:13:07.470719+02:00",
+  "finished_at": "2026-08-26T09:13:08.233043+02:00",
+  "verdict": "fail",
+  "base_commit": "fa54d2f02531ae72edaecf260d6e01cdc7deaae6"
+}

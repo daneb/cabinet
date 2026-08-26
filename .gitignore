@@ -47,3 +47,8 @@ yarn.lock
 # Remove this line to commit saves.json as a backup.
 data/saves.json
 data/library.json
+
+# keel: the symbol index is a build artefact, rebuilt by `keel map`
+.keel/store/map/index.sqlite
+.keel/store/map/*.sqlite-*
+.keel/store/map/index.sqlite.tmp
