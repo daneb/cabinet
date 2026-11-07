@@ -102,8 +102,10 @@ extract_section() {
 
 generate_notes() {
   local prev="$1" new_ver="$2" tag="$3"
-  local range repo_url
-  range="${prev:+${prev}..}${tag}"
+  local range repo_url end
+  # In full mode the tag is created after notes are generated, so fall back to HEAD.
+  if git rev-parse -q --verify "refs/tags/${tag}" >/dev/null; then end="$tag"; else end="HEAD"; fi
+  range="${prev:+${prev}..}${end}"
   repo_url="$(gh repo view --json url -q .url 2>/dev/null || echo "")"
 
   echo "## Cabinet ${new_ver}"
@@ -111,7 +113,7 @@ generate_notes() {
 
   local adr_files=""
   if [[ -n "$prev" ]]; then
-    adr_files="$(git diff --name-only "${prev}..${tag}" -- 'docs/adrs/[0-9]*.md' 2>/dev/null || true)"
+    adr_files="$(git diff --name-only "${prev}..${end}" -- 'docs/adrs/[0-9]*.md' 2>/dev/null || true)"
   else
     adr_files="$(git ls-files 'docs/adrs/[0-9]*.md' 2>/dev/null || true)"
   fi
