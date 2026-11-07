@@ -2,7 +2,7 @@
 // evaluation: { type: 'cp'|'mate', value: number } | null
 // value is from white's perspective: positive = white better.
 
-function EvalBar({ evaluation }) {
+function EvalBar({ evaluation, flipped }) {
   let whitePercent = 50;
   let label = '=';
 
@@ -40,15 +40,15 @@ function EvalBar({ evaluation }) {
   };
 
   return (
-    <div className="eval-bar" title={`Evaluation: ${label}`}>
-      {/* Black section — top of bar */}
-      <div style={{ background: '#15171c', width: '100%', height: blackPercent + '%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', flexShrink: 0 }}>
+    <div className="eval-bar" style={{ flexDirection: flipped ? 'column-reverse' : 'column' }} title={`Evaluation: ${label}`}>
+      {/* Black section — top of bar (bottom when the board is flipped) */}
+      <div style={{ background: '#15171c', width: '100%', height: blackPercent + '%', display: 'flex', flexDirection: 'column', justifyContent: flipped ? 'flex-end' : 'flex-start', flexShrink: 0 }}>
         {!whiteWinning && (
           <div style={{ ...labelStyle, color: '#ffffff' }}>{label}</div>
         )}
       </div>
-      {/* White section — bottom of bar */}
-      <div style={{ background: '#ffffff', width: '100%', height: whitePercent + '%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', flexShrink: 0 }}>
+      {/* White section — bottom of bar (top when the board is flipped) */}
+      <div style={{ background: '#ffffff', width: '100%', height: whitePercent + '%', display: 'flex', flexDirection: 'column', justifyContent: flipped ? 'flex-start' : 'flex-end', flexShrink: 0 }}>
         {whiteWinning && (
           <div style={{ ...labelStyle, color: '#15171c' }}>{label}</div>
         )}

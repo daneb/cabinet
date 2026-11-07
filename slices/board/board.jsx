@@ -4,11 +4,6 @@ const PIECE_GLYPH = {
   K: '♚', Q: '♛', R: '♜', B: '♝', N: '♞', P: '♟',
   k: '♚', q: '♛', r: '♜', b: '♝', n: '♞', p: '♟',
 };
-// Hollow twins, layered over the filled glyph so white pieces get an ink outline.
-const PIECE_OUTLINE = {
-  K: '♔', Q: '♕', R: '♖', B: '♗', N: '♘', P: '♙',
-  k: '♔', q: '♕', r: '♖', b: '♗', n: '♘', p: '♙',
-};
 // Text presentation selector: stops ♟ rendering as an emoji.
 const VS15 = '\uFE0E';
 
@@ -40,9 +35,6 @@ const Square = React.memo(function Square({
           onDragEnd={onDragEnd}
         >
           {PIECE_GLYPH[piece] + VS15}
-          {window.Chess.isWhite(piece)
-            ? <span className="piece-outline" aria-hidden="true">{PIECE_OUTLINE[piece] + VS15}</span>
-            : null}
         </span>
       ) : null}
       {isLegal && !isCapture ? <div className="legal-dot"></div> : null}

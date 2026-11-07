@@ -774,7 +774,7 @@ function App() {
           </div>
 
           <div className="board-with-eval">
-            <window.EvalBar evaluation={displayEval} />
+            <window.EvalBar evaluation={displayEval} flipped={flipped} />
             <window.ChessBoard
               state={currentState}
               selected={selected}

@@ -452,21 +452,16 @@ html, body, #root { height: 100%; }
   cursor: grab;
 }
 .piece.dragging { opacity: 0.25; cursor: grabbing; }
-/* White: filled glyph + ink-outline twin on top. Black: ink glyph with a light halo. */
-.piece.white { color: var(--piece-light); text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35); }
+/* White: one filled glyph with an ink stroke painted underneath the fill (crisp edge,
+   no stacked layers). Black: ink glyph with a light halo. */
+.piece.white {
+  color: var(--piece-light);
+  -webkit-text-stroke: 2px #121212;
+  paint-order: stroke fill;
+}
 .piece.black {
   color: var(--piece-dark);
-  text-shadow: 0 0 1.5px rgba(255, 255, 255, 0.95), 0 0 1px rgba(255, 255, 255, 0.95), 0 2px 3px rgba(0, 0, 0, 0.3);
-}
-.piece-outline {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #121212;
-  text-shadow: none;
-  pointer-events: none;
+  text-shadow: 0 0 1px rgba(255, 255, 255, 0.9);
 }
 
 /* ===== Side panel ===== */

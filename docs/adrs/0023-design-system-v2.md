@@ -23,8 +23,8 @@ component's behaviour are unchanged.
   for danger/errors (`--danger`).
 - **Board**: Wood theme with mid-tone dark squares (`#b58863`), yellow
   last-move tint, rounded board with shadow instead of a 3 px border. White
-  pieces are a filled glyph plus a hollow-glyph twin (`.piece-outline`, in
-  `slices/board/board.jsx`) for an ink outline; black pieces get a light halo.
+  pieces are a single filled glyph with an ink stroke painted under the fill
+  (`paint-order: stroke fill`) for crisp edges; black pieces get a light halo.
   Glyphs use the text-presentation selector U+FE0E so ♟ never renders as emoji.
 - **Type**: Fraunces (wordmark and line titles only), Inter (UI), JetBrains Mono
   (notation, evaluations), Noto Sans Symbols 2 (piece glyphs). Latin subsets are
