@@ -30,7 +30,7 @@ function EvalBar({ evaluation }) {
 
   const labelStyle = {
     fontFamily: 'var(--mono)',
-    fontSize: '7px',
+    fontSize: '10px', fontWeight: 600,
     writingMode: 'vertical-rl',
     textAlign: 'center',
     padding: '3px 0',
@@ -42,15 +42,15 @@ function EvalBar({ evaluation }) {
   return (
     <div className="eval-bar" title={`Evaluation: ${label}`}>
       {/* Black section — top of bar */}
-      <div style={{ background: '#1d1409', width: '100%', height: blackPercent + '%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', flexShrink: 0 }}>
+      <div style={{ background: '#15171c', width: '100%', height: blackPercent + '%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start', flexShrink: 0 }}>
         {!whiteWinning && (
-          <div style={{ ...labelStyle, color: '#f5e6c2' }}>{label}</div>
+          <div style={{ ...labelStyle, color: '#ffffff' }}>{label}</div>
         )}
       </div>
       {/* White section — bottom of bar */}
-      <div style={{ background: '#f5e6c2', width: '100%', height: whitePercent + '%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', flexShrink: 0 }}>
+      <div style={{ background: '#ffffff', width: '100%', height: whitePercent + '%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', flexShrink: 0 }}>
         {whiteWinning && (
-          <div style={{ ...labelStyle, color: '#1d1409' }}>{label}</div>
+          <div style={{ ...labelStyle, color: '#15171c' }}>{label}</div>
         )}
       </div>
     </div>

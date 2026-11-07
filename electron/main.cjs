@@ -24,6 +24,7 @@ const MIME = {
   '.json': 'application/json',
   '.png': 'image/png',
   '.ico': 'image/x-icon',
+  '.woff2': 'font/woff2',
   '.wasm': 'application/wasm',
 };
 

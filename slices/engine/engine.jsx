@@ -4,9 +4,9 @@
 const { useState, useEffect, useRef } = React;
 
 const ARROW_COLORS = {
-  1: '#00c853',  // best move — bright green
-  2: '#2962ff',  // 2nd — blue
-  3: '#9e9e9e',  // 3rd — gray
+  1: '#e8590c',  // best move — suggestion orange
+  2: '#f08c4a',  // 2nd — lighter orange
+  3: '#9a9484',  // 3rd — muted
 };
 const ARROW_IDS = { 1: 'green', 2: 'blue', 3: 'gray' };
 
