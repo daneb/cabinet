@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "electron-store": "^11.0.2",
-    "simple-git": "^3.25.0"
+    "simple-git": "^4.0.2"
   },
   "devDependencies": {
     "electron": "^43.2.0",
