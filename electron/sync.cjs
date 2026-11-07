@@ -7,7 +7,8 @@ const fs = require('fs');
 // real packages are never loaded outside of the Electron runtime.
 
 let _gitFactory = (dir) => {
-  const simpleGit = require('simple-git');
+  // simple-git 4 dropped the callable CommonJS default export.
+  const { simpleGit } = require('simple-git');
   return simpleGit({ baseDir: dir });
 };
 

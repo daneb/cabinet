@@ -257,3 +257,11 @@ describe('commitAndPush', () => {
     assert.match(messages[0], /^repertoire: update/);
   });
 });
+
+describe('real simple-git export', () => {
+  it('exposes a named simpleGit factory (the default git factory depends on it)', () => {
+    const { simpleGit } = require('simple-git');
+    assert.equal(typeof simpleGit, 'function');
+    assert.equal(typeof simpleGit({ baseDir: process.cwd() }).revparse, 'function');
+  });
+});
