@@ -649,8 +649,7 @@ function App() {
       <header className="topbar">
         <div className="brand">
           <span className="brand-mark">Cabinet</span>
-          <span className="brand-tag">Opening</span>
-          <span className="brand-sub">Analysis Board</span>
+          <span className="brand-sub">Opening analysis</span>
         </div>
         <div className="topbar-right">
           {syncStatus && syncStatus.enabled ? (
@@ -658,12 +657,12 @@ function App() {
               className={`sync-indicator${syncing ? ' syncing' : syncStatus.lastError ? ' error' : ' ok'}`}
               title={syncing ? '' : syncStatus.lastError || (syncStatus.lastSync ? `Last synced: ${new Date(syncStatus.lastSync).toLocaleString()}` : '')}
             >
-              {syncing ? '↻ Syncing…' : syncStatus.lastError ? '⚠ Sync error' : '☁ Synced'}
+              {syncing ? '↻ Syncing…' : syncStatus.lastError ? '⚠ Sync error' : '✓ Synced'}
             </div>
           ) : null}
           <div className="engine-status">
             <div className={`engine-dot ${engineReady ? 'ready' : ''}`}></div>
-            {engineReady ? 'engine on' : 'engine…'}
+            {engineReady ? 'Engine on' : 'Engine…'}
           </div>
           <button className="btn btn-ghost" onClick={handleImport}>Import PGN</button>
           <button className="btn btn-ghost" onClick={handleExport}>Export PGN</button>
@@ -671,7 +670,7 @@ function App() {
             <button className="btn btn-ghost" onClick={endDrill}>End drill</button>
           ) : (
             <button className="btn btn-primary" onClick={() => startRepertoireDrill(currentNodeId, 'w', 'any')}>
-              Start Drill
+              Start drill
             </button>
           )}
           <button className="btn btn-ghost" onClick={handleNew}>New line</button>
@@ -775,7 +774,7 @@ function App() {
           </div>
 
           <div className="board-with-eval">
-            <window.EvalBar evaluation={displayEval} />
+            <window.EvalBar evaluation={displayEval} flipped={flipped} />
             <window.ChessBoard
               state={currentState}
               selected={selected}

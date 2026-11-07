@@ -4,6 +4,8 @@ const PIECE_GLYPH = {
   K: '♚', Q: '♛', R: '♜', B: '♝', N: '♞', P: '♟',
   k: '♚', q: '♛', r: '♜', b: '♝', n: '♞', p: '♟',
 };
+// Text presentation selector: stops ♟ rendering as an emoji.
+const VS15 = '\uFE0E';
 
 const Square = React.memo(function Square({
   idx, piece, light, selected, isLast, isLegal, isCapture, isCheck,
@@ -32,7 +34,7 @@ const Square = React.memo(function Square({
           onDragStart={(e) => onDragStart(e, idx)}
           onDragEnd={onDragEnd}
         >
-          {PIECE_GLYPH[piece]}
+          {PIECE_GLYPH[piece] + VS15}
         </span>
       ) : null}
       {isLegal && !isCapture ? <div className="legal-dot"></div> : null}
